@@ -1,0 +1,247 @@
+---
+id: get-started
+title: Get started
+tags:
+  - init
+---
+
+import CodeAlternatives from '@site/src/components/CodeAlternatives'
+import WithLatestVersion from '@site/src/components/WithLatestVersion'
+import CodeBlock from '@theme/CodeBlock'
+import Admonition from '@theme/Admonition'
+import BrowserOnly from '@docusaurus/BrowserOnly'
+import { downloadUrl } from '@site/src/services/downloads'
+
+Let's follow a few steps and we'll get you started in less than 10 minutes.
+
+## Choose an installation method
+
+Blaze comes packaged as a single executable file.
+
+It can be installed on all platforms that support the Rust runtime and Node.js (Linux, MacOS, Windows).
+
+There are two ways to install it :
+
+- [Using pre-built binaries](#installing-using-pre-built-binaries)
+- [Compiling from source code](#installing-from-source-code)
+
+## Installing using pre-built binaries
+
+Pre-built binaries are provided for the most common platforms.
+
+If you want to skip this guide and install the binary by yourself, you can go ahead and find direct download links for each platform [here](/downloads).
+
+### Install for Linux or Mac OSX
+
+Just copy and paste one of the following scripts into your terminal and Blaze will install itself.
+
+:::info
+
+These scripts might assume that you are using `sudo` on your system. You can also run them directly as `root`.
+
+:::
+
+<CodeAlternatives alternatives={
+  [
+    {
+      name: 'Linux (GNU x64)',
+      type: 'linux',
+      platform: 'x86_64-linux-gnu'
+    },
+    {
+      name: 'Linux (Musl x64)',
+      type: 'linux',
+      platform: 'x86_64-linux-musl'
+    },
+    {
+      name: 'OSX (x64)',
+      type: 'osx',
+      platform: 'x86_64-osx'
+    },
+    {
+      name: 'OSX (aarch64)',
+      type: 'osx',
+      platform: 'aarch64-osx'
+    }
+  ].map(({ name, type, platform }) => ({
+    name,
+    view: {
+      language: 'sh'
+    },
+    code: [
+      `curl -sSf --tlsv1.3 https://downloads.blaze-monorepo.dev/versions/latest/builds/${platform}/package | tar zx`,
+      type === 'linux' ? 'sudo install -t /usr/local/bin blaze' : 'sudo cp blaze /usr/local/bin'
+    ].join('\n')
+  }))
+} />
+
+Then verify everything went well by checking the installed Blaze version :
+
+```sh
+blaze version
+```
+
+### Install on Windows
+
+- <BrowserOnly>{() => <a target="_blank" href={downloadUrl('latest', 'x86_64-windows').toString()}>Download the latest package for Windows.</a>}</BrowserOnly>
+- Extract `blaze.exe` anywhere on your system.
+- Add its parent directory to your `Path` environment variable.
+- Restart your shell environment and run `blaze version`.
+
+## Installing from source code
+
+<BrowserOnly>{
+  () => <WithLatestVersion>{
+      version => <>
+        <p>
+          You can install your own binary <a target="_blank" href={`https://github.com/rnza0u/main/tree/blaze-${version}`}>from the source code</a> using different methods.
+        </p>
+        
+        <p>You will need a Rust nightly toolchain (&gt;=2024-06-25). You can download it using <a href="https://rustup.rs"><code>rustup</code></a> :</p>
+
+        <CodeBlock>
+          rustup install nightly-2024-06-25
+        </CodeBlock>
+
+        <Admonition type='info'>
+          By default, the provided scripts will build the last version of Blaze, so you might want to modify the version number.
+        </Admonition>
+
+        <p>In order to use all Blaze features, you will also need the following tools on your system :</p>
+
+        <ul>
+          <li>A C compiler</li>
+          <li><code>pkg-config</code></li>
+          <li>OpenSSL development packages (for example, <code>libssl-dev</code> on Ubuntu or <code>openssl-devel</code> on Fedora.)</li>
+        </ul>
+
+        <h3 style={{ fontSize: '1.25rem' }}>First method (using Cargo)</h3>
+        
+        <p>This method will compile all Rust code from source and fetch non-Rust code and assets from NPM.</p>
+        
+        <CodeBlock language='sh'> 
+          {`cargo +nightly-2024-06-25 install -Z bindeps blaze-cli@${version}`}
+        </CodeBlock>
+
+        <h3 style={{ fontSize: '1.25rem' }}>Second method (using a build script)</h3>
+
+        <p>This method will build everything from scratch, including non-Rust code and assets.</p>
+
+        <p>It requires <a href="https://nodejs.org">Node.js</a> (&gt;= 18.17) and NPM to be installed locally along the Rust toolchain. </p>
+
+        <p>It is only supported on Linux systems but it might also work on other platforms such as OSX.</p>
+
+        <CodeBlock language='sh'> 
+          {
+            [
+              `git clone --depth 1 --branch blaze-${version} https://github.com/rnza0u/main.git`,
+              './main/blaze/bootstrap.sh'
+            ].join('\n')
+          }
+        </CodeBlock>
+
+        <Admonition type="warning">
+          If you have permissions issues when launching <code>bootstrap.sh</code> and you are using <code>sudo</code> on your system, set the <code>USE_SUDO</code> variable before execution.
+        </Admonition>
+      </>
+  }</WithLatestVersion>
+}</BrowserOnly>
+
+## Setting up your monorepo
+
+Once you're ready, you can initialize a new Blaze monorepo in your current working directory using the `init` command :
+
+```sh
+blaze init
+```
+
+:::info
+
+The `init` command's behavior can be customized. [Checkout its documentation](/docs/cli/init) in order to know more. 
+
+:::
+
+The generated `workspace.jsonnet` is your monorepo main configuration file. It is where you will be adding your projects.
+
+For now, there should only one declared project (which is just a demo project).
+
+## Running your first target
+
+A target could be defined as a development cycle step (for example compiling, testing, deploying etc...).
+
+The `init` creates by default a demo project with a simple *Hello world* target. Let's see how it works.
+
+From the top of our workspace, we should have the following file structure :
+
+```
+├── workspace.jsonnet
+├── hello-world-root/
+|   ├── project.jsonnet
+```
+
+First, explore the `workspace.jsonnet` file. There should be a project reference named `example-project`.
+
+```json title="workspace.json"
+{
+  "name": "<name of your workspace>",
+  "projects": {
+    "example-project": {
+      "path": "example-project",
+      "tags": [],
+      "description": "A demo project for your new workspace !"
+    }
+  },
+  "settings": {
+    // ... more keys ...
+  }
+}
+```
+
+It is indicated that a project named `example-project` lives inside the `example-project` directory.
+
+Inside this directory, the project is configured inside a `example-project/project.json` file.
+
+```json title="hello-world/project.json"
+{
+  "targets": {
+    "say-hello": {
+      "executor": "std:commands",
+        "options": {
+          "commands": [
+            {
+                "program": "echo",
+                "arguments": ["{{ vars.demo-message }}"]
+            }
+          ]
+        }
+    }
+  }
+}
+```
+
+In this project, only one target is defined, it is named `say-hello`.
+
+Any target in Blaze can rely on what we call an *executor*. It is what makes the target *do something*.
+
+The one that we are using in this case allows us to run shell commands (`std:commands`). It is configured through the `options` key.
+
+Let's try it by running our target :
+
+```sh
+$ blaze run example-project:say-hello
+```
+
+Let's checkout the output:
+
+```
+[INFO] 1 target(s) will be executed (["example-project:say-hello"])
+[INFO] 1 executor reference(s) will be resolved (["std:commands"])
+[INFO] + echo Hello world!
+Hello world!
+
+Execution graph results:
+
+example-project:say-hello (executed in 1.1286ms)
+```
+
+All good. Now we can create real targets for real projects !

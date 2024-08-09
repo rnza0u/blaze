@@ -1,0 +1,25 @@
+[package]
+name = "blaze-rust-bridge"
+description = "A sidecar program that serves as a bridge between Blaze CLI and Rust custom executors."
+repository = "https://github.com/rnza0u/main.git"
+homepage = "https://blaze-monorepo.dev"
+license = "MIT"
+version = "0.2.11"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+libloading = "0.8"
+serde = { version = "1.0", features = ["derive"] }
+anyhow = "1.0"
+serde_json = "1.0"
+interprocess = "2.1.0"
+blaze-devkit = { path = "../devkit", version = "0.2.11" }
+blaze-common = { path = "../../common", version = "0.2.11" }
+
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
+codegen-units = 1

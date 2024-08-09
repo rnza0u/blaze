@@ -1,0 +1,23 @@
+{
+  "name": "@blaze-repo/node-devkit",
+  "version": "0.2.11",
+  "homepage": "https://blaze-monorepo.dev",
+  "repository": {
+    "url": "git+https://github.com/rnza0u/main.git",
+    "directory": "blaze/node/devkit"
+  },
+  "description": "Node devkit for the Blaze build system.",
+  "type": "module",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "author": "rnza0u",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.5.2"
+  },
+  "dependencies": {
+    "zod": "^3.22.4"
+  }
+}

@@ -1,0 +1,17 @@
+{
+    "$schema": "https://blaze-monorepo.dev/schemas/project-schema.json",
+    "targets": {
+        "say-hello": {
+            "executor": "std:commands",
+            "options": {
+                "commands": [
+                    {
+                        "program": "echo",
+                        "arguments": ["\{{ vars.demo-message }}"]
+                    }
+                ],
+                "shell": true
+            }
+        }
+    }
+}

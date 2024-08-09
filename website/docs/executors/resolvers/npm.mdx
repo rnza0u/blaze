@@ -1,0 +1,96 @@
+---
+id: npm
+title: NPM
+tags:
+    - Custom executors
+    - Node.js
+    - NPM
+---
+
+# The `npm` scheme
+
+When using the `npm` scheme, Blaze will load the executor from the specified NPM package.
+
+Here are a few examples :
+
+- `npm:///my-custom-executor` fetches `my-custom-executor` from the official NPM registry.
+- `npm://npm.my-company.com/my-custom-executor` fetches `my-custom-executor` from a private NPM registry called `npm.my-company.com`. 
+
+The full URL must match the following format : `npm://[<host>[:<port>]]/<package>`
+
+If the `host`/`port` part is not provided, the official NPM registry located at `https://registry.npmjs.org` will be used.
+
+NPM executors can only be [Node executors](../languages/node).
+
+You will need `npm` to be installed on your system. You can provide your own path to the `npm` program with the `BLAZE_NPM_LOCATION` environment variable. 
+
+In most cases, NPM executors can be referenced using a simple URL.
+
+```json
+{
+    "executor": "npm:///my-custom-executor"
+}
+```
+
+## Specifying the version
+
+By default, the latest version for the package is fetched. You can set a custom version with the `version` parameter.
+
+```json
+{
+    "executor": {
+        "url": "npm:///my-custom-executor",
+        "version": "1.0.0"
+    }
+}
+```
+
+## Authentication
+
+The following authentication modes are supported when resolving executors from NPM :
+
+- Using a username and password
+- Using an access token
+
+:::info
+
+By default, credentials from your global NPM configuration (`~/.npmrc`) will be used.
+
+:::
+
+### Username and password authentication
+
+In order to authenticate using a username/password, you can use the following configuration :
+
+```json
+{
+    "executor": {
+        "url": "npm:///my-custom-executor",
+        "authentication": {
+            "username": "{{ environment.NPM_USER }}",
+            "password": "{{ environment.NPM_PASSWORD }}"
+        }
+    }
+}
+```
+
+### Access token authentication
+
+Access token authentication can be done using the following configuration :
+
+```json
+{
+    "executor": {
+        "url": "npm:///my-custom-executor",
+        "authentication": {
+            "token": "{{ environment.NPM_TOKEN }}"
+        }
+    }
+}
+```
+
+## Other configuration options
+
+Other configuration keys are :
+
+- `insecure`: when set to `true`, SSL/TLS certificate rejections will be ignored when connecting to the registry. Use only for debugging purpose.

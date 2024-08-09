@@ -1,0 +1,22 @@
+{
+  "name": "node-checker",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc && echo \"$(openssl rand -hex 8)\" > build_hash"
+  },
+  "blaze": {
+    "version": "1",
+    "type": "executor",
+    "path": "dist/index.js"
+  },
+  "devDependencies": {
+    "@types/chance": "^1.1.5",
+    "@types/node": "^18.15.11",
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "@blaze-repo/node-devkit": "file:../../../../../node/devkit",
+    "chance": "^1.1.11"
+  }
+}

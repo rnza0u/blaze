@@ -1,0 +1,46 @@
+:root {
+  --ifm-color-primary: #4a616c;
+  --ifm-color-primary-dark: #435761;
+  --ifm-color-primary-darker: #3f525c;
+  --ifm-color-primary-darkest: #34444c;
+  --ifm-color-primary-light: #516b77;
+  --ifm-color-primary-lighter: #55707c;
+  --ifm-color-primary-lightest: #607e8c;
+  --ifm-code-font-size: 95%;
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #adbec7;
+  --ifm-color-primary-dark: #97acb8;
+  --ifm-color-primary-darker: #8ca4b0;
+  --ifm-color-primary-darkest: #6b899a;
+  --ifm-color-primary-light: #c3d0d6;
+  --ifm-color-primary-lighter: #ced8de;
+  --ifm-color-primary-lightest: #eff3f4;
+}
+
+.button {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.button i {
+  margin-right: 0.5rem;
+}
+
+.d-flex {
+  display: flex;
+}
+
+.flex-row {
+  flex-direction: row;
+}
+
+.align-center {
+  align-items: center;
+}
+
+.alert {
+  margin-bottom: var(--ifm-leading)
+}

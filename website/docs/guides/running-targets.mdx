@@ -1,0 +1,135 @@
+---
+id: running-targets
+title: Running targets
+---
+
+The `run` command is used in order to run a target on a selection of projects.
+
+## How to run a target
+
+Here is a basic example which runs a target called `build` on a single project called `webapp`.
+
+```
+blaze run -t build -p webapp
+```
+
+- The `-t` (or `--target`) option is used in order to provide the target name
+- The `-p` (or `--projects`) option is used in order to select projects using their names (as declared in your workspace configuration at the `projects` key).
+
+When you are launching the target for only one project, you can use a simplified syntax.
+
+This example produces the same result as the last one :
+
+```
+blaze run webapp:build
+```
+
+## Project selectors
+
+There are many different ways to select eligible projects to run a target.
+
+### Multiple named projects
+
+You can use the `-p` / `--projects` flag in order to select multiple projects by their names.
+
+Just provide as a comma-separated list of project names.
+
+```sh
+blaze run -p project1,project2,project3 -t some-target 
+```
+
+Any non-existing project within the list will result in an error.
+
+### Using a regular expression
+
+You can select projects which names match on a regular expression using the `-r` / `--regex` flag.
+
+The expression is compiled and matched against using the [`regex`](https://docs.rs/regex-syntax/1/regex_syntax/) Rust crate.
+
+```sh
+blaze run -r '^[a-zA-Z0-9]+$' -t build
+```
+
+### All projects
+
+You can also select all projects using the `-a` / `--all` flag.
+
+```sh
+blaze run -a -t build
+```
+
+### Using tags
+
+You can select projects that match some tags.
+
+```sh
+blaze run --tags tag1,tag2,tag3 -t build
+```
+
+## Using named selectors
+
+You can have project selectors declared at the workspace level :
+
+```json title="workspace.json"
+{
+    "settings": {
+        "selectors": {
+            "apps": ["app-1", "app-2", "app-3"]
+        }
+    }
+}
+```
+
+The `-s`, or `--selector` is used to specify the name of the selector :
+
+```sh
+blaze run -s apps -t build
+```
+
+This will run the `build` target on 3 different projects: `app-1`, `app-2` and `app-3`.
+
+[Checkout this link](./workspace.mdx#named-selectors) if you want to know more about named selectors.
+
+### Default projects
+
+If you don't specify any project selector, projects declared in your workspace settings at the `defaultSelector` key will be selected.
+
+```
+blaze run -t build
+```
+
+This will run the `build` target using a default selector, or fail if there is no defaut selector.
+
+The `defaultSelector` setting can take any project selector. Checkout this [documentation](./workspace.mdx#default-selector) in order to know more.
+
+## Parallelism
+
+By default, Blaze executes targets sequentially.
+
+You can override this behavior using the `--parallelism` option.
+
+```sh
+# run the `build` target on all projects, with at most two tasks in parallel.  
+blaze -t build -a --parallelism 2
+
+# run the `build` target on all projects, with as many tasks in parallel as possible.  
+blaze -t build -a --parallelism All
+
+# run the `build` target on all projects, with at most one task per available processing unit on your system.
+blaze -t build -a --parallelism Cores
+ 
+# run the `build` target on all projects, sequentially.
+blaze -t build -a --parallelism None
+```
+
+## Check the execution graph before running
+
+It is possible to preview the execution graph before actually running the targets.
+
+You can do so by using the `--dry-run` flag :
+
+```
+blaze --dry-run my-app:build
+```
+
+The `run` command will then do everything except actually executing the targets. Please note that executors will still be resolved even when using the `--dry-run` flag.

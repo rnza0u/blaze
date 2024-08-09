@@ -1,0 +1,25 @@
+[build]
+pre-build = [
+    "apt-get update && apt-get --assume-yes install libssl-dev"
+]
+
+[build.env]
+passthrough = [
+    "BLAZE_NODE_BRIDGE_BUNDLE_PATH",
+    "BLAZE_JSON_SCHEMAS_LOCATION"
+]
+volumes = [
+    "BLAZE_ROOT"
+]
+
+[target.aarch64-apple-darwin]
+image = "registry.rnzaou.me/aarch64-apple-darwin-cross:latest"
+env = { passthrough = ["RANLIB=arm64e-apple-darwin21.4-ranlib"] }
+pre-build = [
+    "dpkg --add-architecture arm64", 
+    "apt-get update && apt-get --assume-yes install libssl-dev:arm64"
+]
+
+[target.x86_64-apple-darwin]
+image = "registry.rnzaou.me/x86_64-apple-darwin-cross:latest"
+env = { passthrough = ["RANLIB=x86_64h-apple-darwin21.4-ranlib"] }

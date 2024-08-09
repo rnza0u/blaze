@@ -1,0 +1,99 @@
+---
+id: rust
+title: Rust executors
+tags:
+    - Executors
+    - Rust
+    - Cargo
+---
+
+
+## Rust custom executors
+
+Custom Blaze executors can be written using the [Rust programming language](https://www.rust-lang.org/).
+
+Usage of Rust custom executors requires that `cargo` and a Rust toolchain are installed locally. 
+
+Both of these can be installed using [`rustup`](https://rustup.rs).
+
+## How to write a Rust executor ?
+
+A Rust executor is a regular Cargo project :
+
+```
++-- src
+    +-- lib.rs
++-- Cargo.toml
+```
+
+A minimal code example would look like this :
+
+```rust title="src/lib.rs"
+use blaze_devkit::{
+    value::Value,
+    ExecutorContext, 
+    ExecutorResult
+};
+
+#[export_name = "execute"]
+pub fn execute(ctx: &ExecutorContext, options: &Value) -> ExecutorResult {
+    ctx.logger.info("Hello Blaze!");
+    Ok(())
+}
+```
+
+The `blaze-devkit` [crates.io package](https://crates.io/crates/blaze-devkit) provides type definitions for writing Rust executors :
+
+- The `ExecutorContext` type can be used to extract information about the workspace, or the target being executed. It also provides a `Logger` instance.
+- The `Value` type represent non-structured data. It is compatible with `serde` so it can easily be converted into any type that implements `serde::Deserialize`.
+- Your executor must return an `ExecutorResult` type, which is an alias for `Result<(), Box<dyn Error + Send + Sync>>`.
+
+Your Cargo configuration file must have this form :
+
+```toml title="Cargo.toml"
+[package]
+name = "my-rust-executor"
+version = "1.0.0"
+edition = "2021"
+
+[package.metadata.blaze]
+version = "1"
+type = "executor"
+exported = "execute"
+
+[lib]
+crate-type = ["dylib", "rlib"]
+
+[dependencies]
+blaze-devkit = "1"
+```
+
+## Code rules
+
+There are several rules to be aware of when writing Rust executors.
+
+Only unwinded panics are supported (we use [`catch_unwind`](https://doc.rust-lang.org/std/panic/fn.catch_unwind.html) under the hood). Panics that cannot be catched would result in undefined behavior. It is recommended to always return a valid `Result<()>` in your executor function and try to avoid panics.
+
+Your executor function will be invoked in a separate process using the [`libloading`](https://docs.rs/libloading/latest/libloading/) crate. Some code still needs to be executed after your executor function has returned (or panicked). Consequently, forcing termination with [`std::process::exit`](https://doc.rust-lang.org/std/process/fn.exit.html) would also result in undefined behavior.
+
+## Execution flow
+
+Rust executors flow is the following :
+
+- Run `cargo build --lib --release`. The `target` directory will be at the root of the executor package.
+- Run a small embedded binary in a separate process. It handles the resolution of the executor function declared in the `Cargo.toml` (at the `package.metadata.blaze.exported` key).
+- Run the function. If the return value is an `Err(Box<dyn Error + Send + Sync>)` or if a panic is catched, the target execution will be considered as failed. If it is an `Ok(())`, then the execution is successful.
+
+The build step will be ignored if already done.
+
+:::info
+
+By default, the `cargo` program is directly called as if it was on the command line. If you want to provide a custom path to your Cargo binary, you can specify it in the `BLAZE_CARGO_LOCATION` environment variable.
+
+:::
+
+:::warning
+
+Since Rust executors rely on dynamic link library runtime loading, static musl binaries do not support it.
+
+:::

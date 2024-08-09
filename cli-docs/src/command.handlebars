@@ -1,0 +1,35 @@
+# {{ this.name }}
+
+*{{ this.name }}* - *{{ this.about }}*
+
+## Description
+
+{{ this.longAbout }}
+
+## Synopsis
+
+*{{ this.name }}* {{#each this.options}}**{{>option-identifier option=this}}**{{#unless @last}} {{/unless}}{{/each}} {{#each this.arguments}}*{{>argument-identifier argument=this}}*{{#unless @last}} {{/unless}}{{/each}} {{#if this.subcommands}}&lt;SUBCOMMAND&gt;{{/if}}
+
+## Options
+
+{{#each this.options}}
+- **{{>option-identifier option=this}}** : {{ this.help }}
+{{else}}
+No options for this command.
+{{/each}}
+
+## Arguments
+
+{{#each this.arguments}}
+- **{{>argument-identifier argument=this}}** : {{ this.help }}
+{{else}}
+No positional arguments for this command.
+{{/each}}
+
+## Subcommands
+
+{{#each this.subcommands}}
+- [{{ this.name }}]({{ this.link }})
+{{else}}
+No subcommands for this command.
+{{/each}}

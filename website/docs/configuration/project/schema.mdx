@@ -1,0 +1,25 @@
+---
+id: schema
+title: Schema
+tags:
+    - Configuration
+    - Project
+    - Targets
+    - Schema
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import schema from '../../../static/schemas/project-schema'
+import JSONSchemaViewer from '@theme/JSONSchemaViewer'
+
+The project configuration reference is based on the following JSON schema :
+
+<JSONSchemaViewer schema={ schema } viewerOptions={{ showExamples: true }} />
+
+[Schema direct link](/schemas/project-schema.json)
+
+Here is a raw version of this scheme :
+
+<CodeBlock title="project-schema.json" language="json" showLineNumbers>
+    {JSON.stringify(schema, null, 2)}
+</CodeBlock>

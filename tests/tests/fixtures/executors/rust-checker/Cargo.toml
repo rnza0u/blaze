@@ -1,0 +1,15 @@
+[package]
+name = "rust-checker"
+version = "0.1.0"
+edition = "2021"
+
+[package.metadata.blaze]
+version = "1"
+type = "executor"
+exported = "execute"
+
+[lib]
+crate-type = ["dylib", "rlib"]
+
+[dependencies]
+blaze-devkit = { path = "../../../../../rust/devkit" }

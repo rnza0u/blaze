@@ -1,0 +1,40 @@
+---
+id: cargo
+title: Cargo
+tags:
+    - Custom executors
+    - Cargo
+    - Rust
+---
+
+# The `cargo` scheme
+
+When using the `cargo` scheme, Blaze will load the executor from a specific Cargo package.
+
+```json
+{
+    "executor": "cargo:///my-custom-executor-crate"
+}
+```
+
+The following URL formats are supported :
+
+- `cargo:///<crate-name>`: Will fetch `crate-name` from the official [crates.io](https://crates.io) registry.
+- `cargo://<custom-registry>[:<port>]/<crate-name>`: Will fetch `crate-name` from `custom-registry`, which can be any valid host, along with an optional port number. 
+
+You can provide more options as well using this syntax :
+
+```json
+{
+    "executor": {
+        "url": "cargo:///my-custom-executor-crate",
+        "version": "1.0.0",
+        "insecure": false,
+        "token": "{{ environment.CARGO_TOKEN }}"
+    }
+}
+```
+
+- `version` : The crate version string, same syntax as in `Cargo.toml`
+- `token` : The token to use when authenticating to a custom registry.
+- `insecure` : When value is set to `true`, will allow non secure connections or certificate rejections when using TLS. Should be set only for debugging purposes.

@@ -1,0 +1,26 @@
+{
+  "name": "@blaze-repo/node-bridge",
+  "homepage": "https://blaze-monorepo.dev",
+  "repository": {
+    "url": "git+https://github.com/rnza0u/main.git",
+    "directory": "blaze/node/bridge"
+  },
+  "version": "0.2.11",
+  "description": "A bridge between Blaze and Node.js executors.",
+  "main": "dist/main.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc && esbuild dist/main.js --bundle --outfile=dist/main.js --platform=node --minify --allow-overwrite=true --format=esm"
+  },
+  "author": "Renaud N'zaou",
+  "license": "MIT",
+  "dependencies": {
+    "@blaze-repo/node-devkit": "0.2.11",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.3",
+    "esbuild": "0.21.5",
+    "typescript": "^5.5.2"
+  }
+}

@@ -1,0 +1,13 @@
+---
+id: environment
+title: Environment variables
+---
+
+Blaze loads environment variables from two different files:
+
+- `.env`: Versioned file for global default environment variables.
+- `.user.env`: Non-versioned file for user-provided global environment variables.
+
+Only the `.user.env` should be used to contain sensitive data. Both of these files must be placed at the root of your workspace in order to be picked up by Blaze.
+
+Please note that any variable in these files will be set only if it was primarily unset. You can still override them using the command line. 

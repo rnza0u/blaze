@@ -1,0 +1,36 @@
+[package]
+name = "blaze-cli"
+description = "A fast, simple and flexible build system."
+repository = "https://github.com/rnza0u/main.git"
+homepage = "https://blaze-monorepo.dev"
+version = "0.2.11"
+edition = "2021"
+license = "MIT"
+keywords = ["monorepo", "integration", "build"]
+categories = ["development-tools"]
+
+[[bin]]
+name = "blaze"
+path = "src/main.rs"
+
+[lib]
+name = "blaze_cli"
+
+[dependencies]
+# external dependencies
+clap = { version = "4", features = ["derive", "cargo"] }
+colored = "2"
+anyhow = "1.0"
+possibly = { version = "1.0" }
+strum = "0.26"
+strum_macros = "0.26"
+build-time = "0.1"
+# internal dependencies
+blaze-common = { path = "../common", version = "0.2.11" }
+blaze-core = { path = "../core", version = "0.2.11" }
+
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
+codegen-units = 1

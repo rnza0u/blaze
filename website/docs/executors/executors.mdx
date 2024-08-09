@@ -1,0 +1,73 @@
+---
+id: executors
+title: What is an executor ?
+tags:
+    - Executors
+---
+
+An executor is a way to execute a target. Technically speaking, it is just a piece of code which takes specific options as an input. This code is called when running a target that uses this executor.
+
+Each target defined in any project must reference an executor.
+
+There are two different kinds of executors :
+
+- [Standard executors](#standard-executors)
+- [Custom executors](#custom-executors)
+    - [Executor resolvers](#executor-resolvers)
+
+## Standard executors
+
+Some executors are provided out of the box :
+
+- [`commands`](std/commands.mdx), used in order to run system commands, possibly in parallel.
+- [`exec`](std/exec.mdx), similar to the `commands` standard executor, but for executing a single program, or shell script.
+
+These standard executors can be referenced in any target using the `std` scheme, like shown above :
+
+```json
+{
+    "targets": {
+        "say-hello": {
+            "executor": "std:commands",
+            "options": {
+                "commands": [
+                    {
+                        "program": "echo",
+                        "arguments": ["Hello world!"]
+                    }
+                ],
+            }
+        }
+    }
+}
+```
+
+The goal of standard executors is to remain as generic as possible and serve all basic use cases. 
+
+Custom executors allows you to write executors that can be resolved from different sources like the filesystem or the network.
+
+## Custom executors
+
+In some cases, it is required to replicate the same logic across multiple targets. Standard executors may not be suitable for this purpose.
+
+You can create your own executors and use them in project inside your workspace.
+
+You can also publish an executor if you want to make it available everywhere.
+
+Blaze supports writing custom executors in different languages/runtimes :
+
+- [Rust](languages/rust.mdx)
+- [Node](languages/node.mdx)
+
+### Executor resolvers
+
+There are multiple ways to resolve a custom executor within your target configuration.
+
+Executor references are provided as URL strings.
+
+Multiple locations are supported :
+
+- [Local filesystem](resolvers/file-system.mdx)
+- [Git](resolvers/git.mdx)
+- [NPM](resolvers/npm.mdx)
+- [Cargo](resolvers/cargo.mdx)

@@ -1,0 +1,21 @@
+local blaze = std.extVar('blaze');
+
+// a demo project created by the `init` command.
+{
+    targets: {
+        // you can try to launch this target with the following command :
+        // blaze run example-project:say-hello
+        'say-hello': {
+            executor: 'std:commands',
+            options: {
+                commands: [
+                    {
+                        program: 'echo',
+                        arguments: [blaze['vars']['demo-message']]
+                    }
+                ],
+                shell: true
+            }
+        }
+    }
+}

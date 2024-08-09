@@ -1,0 +1,13 @@
+services:
+  blaze-website:
+    image: registry.rnzaou.me/blaze-website:latest
+    container_name: blaze-website
+    restart: always
+    expose:
+      - "80/tcp"
+    networks:
+      - reverse-proxy
+networks:
+  reverse-proxy:
+    external: true
+    name: reverse-proxy

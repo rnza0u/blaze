@@ -1,0 +1,4 @@
+target
+tests/fixtures/executors/rust-checker/target
+tests/fixtures/executors/node-checker/dist
+tests/fixtures/executors/node-checker/node_modules

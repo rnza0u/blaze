@@ -1,0 +1,117 @@
+---
+id: dependencies
+title: Defining dependencies
+---
+
+You can specify dependencies for any target using the `targets.*.dependencies` key.
+
+Running the `build` target on this project will first run the `build` target on `project-2` and `project-3`:
+
+```json title="project-1/project.json"
+{
+    "targets": {
+        "build": {
+            "executor": "std:commands",
+            "options": {
+                "commands": [
+                    "npm run build"
+                ]
+            },
+            "dependencies": [
+                {
+                    "target": "build",
+                    "projects": ["project-2", "project-3"]
+                }
+            ]
+        }
+    }
+}
+```
+
+You can have as many dependencies as you like. The order in which they are declared does not matter.
+
+Dependencies are resolved recursively, so in the last example, if `project-2` or `project-3` have dependencies for the `build` target, they will be resolved as well in the target execution graph.
+
+The `projects` key must be a valid project selector, similar to items declared at the [workspace configuration `settings.selectors` key](./workspace.mdx#named-selectors).
+
+The `target` key must be a target name and is mandatory.
+
+:::info
+
+If a target must depend on another target within the same project, you can omit the `projects` key on the dependency. You can even simply pass the target name and it will work the same. 
+
+::::
+
+:::info
+
+If a target must depend on a single target from another another, you can omit the `projects` key on the dependency and pass the project name and target using this format: `project:target`. 
+
+::::
+
+## Ignore unmet dependencies
+
+Sometimes, some dependencies cannot be satisfied due to an execution failure, if you want to ignore that, you can use the `optional` flag.
+
+```json title="main-project/project.json"
+{
+    "targets": {
+        "build": {
+            "executor": "std:commands",
+            "options": {
+                "commands": [
+                    "npm run build"
+                ]
+            },
+            "dependencies": [
+                {
+                    "target": "other-project:build",
+                    "optional": true
+                }
+            ]
+        }
+    }
+}
+```
+
+In that case, if the `optional-project:build` target fails, then the project's `build` target will be executed anyway and a warning will be emitted.
+
+Note that an unmet dependency can mean two things :
+
+- One of the dependency's targets executions failed.
+- One of the dependency's targets could not be executed because its own dependencies were not met.
+
+## Cache propagation
+
+By default, cache is propagated from the dependency to the dependent target.
+
+It means that if the dependency was either never cached or has just invalidated its cache, the dependent target will also invalidate its cache.
+
+You can disable this behavior by using the `cachePropagation` property :
+
+```json title="project-1/project.json"
+{
+    "targets": {
+        "build": {
+            "executor": "std:commands",
+            "options": {
+                "commands": [
+                    "npm run build"
+                ]
+            },
+            "dependencies": [
+                {
+                    "target": "project-2:build",
+                    "cachePropagation": "Never"
+                }
+            ]
+        }
+    }
+}
+```
+
+In that example, when `project-2:build` is freshly executed, `project-1:build` will not invalidate its cache because of it. 
+
+Possible values are :
+
+- `Always`: Always propagate cache. The default value.
+- `Never`: Never propagate cache. In that case, cache will not be invalidated for this target when the dependency is freshly executed.

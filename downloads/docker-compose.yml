@@ -1,0 +1,20 @@
+services:
+  blaze-downloads:
+    image: registry.rnzaou.me/blaze-downloads:latest
+    container_name: blaze-downloads
+    restart: always
+    environment:
+      - BIN_ROOT=/builds
+      - ADDR=0.0.0.0
+      - PORT=80
+      - WEBSITE_ORIGIN=https://blaze-monorepo.dev
+    networks:
+      - reverse-proxy
+    expose:
+      - 80/tcp
+    volumes:
+      - /var/lib/blaze/builds:/builds:ro
+networks:
+  reverse-proxy:
+    external: true
+    name: reverse-proxy

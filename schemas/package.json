@@ -1,0 +1,33 @@
+{
+  "name": "@blaze-repo/json-schemas",
+  "homepage": "https://blaze-monorepo.dev",
+  "version": "0.2.11",
+  "repository": {
+    "url": "git+https://github.com/rnza0u/main.git",
+    "directory": "blaze/schemas"
+  },
+  "type": "module",
+  "description": "Blaze configuration files JSON schemas.",
+  "main": "dist/index.js",
+  "files": [
+    "src",
+    "dist",
+    "schemas",
+    "tsconfig.json"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js"
+  },
+  "keywords": [],
+  "author": "Renaud N'zaou",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/json-schema": "^7.0.15",
+    "@types/node": "^20.11.17",
+    "typescript": "^5.5.2"
+  },
+  "dependencies": {
+    "@hyperjump/json-schema": "^1.7.2"
+  }
+}

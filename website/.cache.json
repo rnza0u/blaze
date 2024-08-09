@@ -1,0 +1,7 @@
+[
+    ".docusaurus",
+    "build",
+    "node_modules",
+    "docs/cli",
+    "static/schemas"
+]

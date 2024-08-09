@@ -1,0 +1,11 @@
+[package]
+name = "blaze-cli-docs-generator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+blaze-cli = { path = "../cli" }
+clap_mangen = "0.2.20"
+handlebars = "5.1.0"
+serde = "1.0"

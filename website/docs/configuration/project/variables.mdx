@@ -1,0 +1,25 @@
+---
+id: variables
+title: Variables
+tags:
+    - Configuration
+    - Project
+    - Targets
+    - Variables
+---
+
+import globals from '@site/docs/variables/globals'
+import workspaceVariables from '@site/docs/variables/workspace'
+import projectVariables from '@site/docs/variables/project'
+import customVariables from '@site/docs/variables/vars'
+
+import SubstitutionVariables from '@site/src/components/SubstitutionVariables'
+
+The following variables are available for string interpolation inside your project configuration files :
+
+<SubstitutionVariables vars={[
+    ...customVariables,
+    ...projectVariables,
+    ...workspaceVariables,
+    ...globals
+]}/>

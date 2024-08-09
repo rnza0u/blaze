@@ -1,0 +1,310 @@
+---
+id: templating
+title: Templating features
+---
+
+import globals from '@site/docs/variables/globals'
+import SubstitutionVariables from '@site/src/components/SubstitutionVariables'
+
+Some useful templating features are provided when writing configuration files such as :
+
+- Workspace configuration file
+- Project configuration files
+
+## Basic string interpolation
+
+All strings can contain interpolated data, whether you are using pure JSON, YAML or Jsonnet :
+
+```json title = "project.json"
+{
+    "targets": {
+        "print-message": {
+            "executor": "std:commands",
+            "options": {
+                "commands": [
+                    {
+                        "program": "echo",
+                        "arguments": ["{{ vars.message }}"]
+                    }
+                ]
+            }
+        }
+    }
+}
+```
+
+This `print-message` target will print the value contained in the `vars.message` custom variable.
+
+:::info
+
+The `vars` prefix indicates that you want to interpolate a [custom variable](#custom-variables).
+
+:::
+
+## Global variables
+
+These variables are always available (in both workspace and project configuration files) :
+
+<SubstitutionVariables vars={globals}/>
+
+## Dynamic configuration
+
+Sometimes, you need more than just interpolating strings, for example : 
+
+- If you want your configuration file to have a dynamic structure
+- If you want to pass a variable of any type outside of a string literal, without the `{{ }}` syntax.
+
+When using Jsonnet, all variables are imported through the external variable `blaze` when compiling your template.
+
+For example, if we need to have different arguments according to the current OS for a command launched through the `std:commands` executor :
+
+```jsonnet title="project.jsonnet"
+{
+    local blaze = std.extVar('blaze'),
+    targets: {
+        clean: {
+            executor: 'std:commands',
+            options: {
+                commands: if blaze.family == "unix"
+                    then [
+                        {
+                            program: 'rm',
+                            arguments: ['-rf', 'dist']
+                        },
+                    ] else [
+                        {
+                            program: 'del',
+                            arguments: ['dist']
+                        }
+                    ]
+            }
+        }
+    }
+}
+```
+
+### Jsonnet libraries
+
+A good way to refactor your configurations is to create Jsonnet libraries.
+
+They usually are made of `.libsonnet` files that you can import inside your configuration files.
+
+It can be quite difficult to deal with relative paths imports.
+
+You can easily add Jsonnet library paths by creating a `.blaze/.jpath` file (if it does not already exist).
+
+Let's say we have a `helper.libsonnet` file in our library path.
+
+```
+├── libs/
+|   ├── jsonnet/
+|   |   ├── helper.libsonnet
+``` 
+
+We need to provide our libraries' parent directory in our `.blaze/.jpath`. 
+
+Directories must be provided line per line.
+
+Relative paths are analyzed from the workspace root directory. Absolute paths are also supported, but not recommended. Non-existent paths will be silently ignored.
+
+If we add the following line to our `.jpath` file, direct import using `import 'helper.libsonnet'` should work in Jsonnet files :
+
+```txt title=".blaze/.jpath"
+libs/jsonnet/
+```
+
+## Templating helpers
+
+Blaze templating system uses [Handlebars](https://handlebarsjs.com/) under the hood.
+
+### Standard Handlebars helpers
+
+All the [standard helpers](https://handlebarsjs.com/guide/builtin-helpers.html#if) are available. 
+
+These helpers include if/else conditions, loops, debugging utilities and more...
+
+### Blaze built-in helpers
+
+Blaze also provides two useful helpers :
+
+- The `shell` helper, for interpolating any system command output.
+- The `random` helper, for interpolating random string of arbitrary size.
+
+#### The `shell` helper
+
+Basic usage is as follows :
+
+```json
+"{{ shell \"whoami\" trim=true }}"
+```
+
+This will print the result of the `whoami` command. The `trim` parameter is here to remove any trailing whitespace at the end of the command output.
+
+The `shell` helper always run commands in a shell. You can also customize the shell path and kind, just like the [`std:commands` executor](../executors/std/commands#using-a-shell).
+
+```json
+"{{ shell \"whoami\" shell=\"/bin/bash\" shellKind=\"Posix\" trim=true }}"
+```
+
+By default, commands provided to the `shell` helper run at the workspace root. You can customize this location by providing a `cwd` parameter.
+
+```json
+// this will output /tmp
+"{{ shell \"pwd\" cwd=\"/tmp\" }}"
+```
+
+#### The `random` helper
+
+Basic usage is as follows :
+
+```json
+"{{ random 16 }}"
+```
+
+This will interpolate a random alphanumerical string of length 16, like this :
+
+`a514Snw21Rf59JpC`
+
+The generation is done through [`rand::rngs::ThreadRng`](https://docs.rs/rand/latest/rand/rngs/struct.ThreadRng.html).
+
+:::warning
+
+A new value will be generated everytime the file is parsed, so be careful since this might cause unwanted cache invalidation.
+
+:::
+
+### Custom template helpers
+
+You can create your own helpers in the form of [`rhai` scripts](https://rhai.rs/book/).
+
+Create a script file in `.blaze/helpers` :
+
+```
++-- .blaze
+    +-- helpers
+        +-- my-uppercase.rhai
+```
+
+:::info
+
+The script filenames must match the following regular expression in order to be picked up by Blaze : `^[a-zA-Z0-9\-_]\.rhai$`.
+
+:::
+
+We can then write the script code, in this example we simply take the first indexed parameter that is given to the helper and make it uppercase, assuming it is a string.
+
+``` title=".blaze/helpers/my-uppercase.rhai"
+let input = params[0];
+
+input.make_uppercase();
+
+input
+```
+
+Finally we can use the helper anywhere in a template string.
+
+```json
+"{{ my-uppercase  \"Hello world!\" }}"
+```
+
+The interpolated value will then be: `HELLO WORLD!`.
+
+:::info
+
+Handlebars helpers support both indexed and hash (named) parameters.
+
+- Indexed parameters are accessed using the `params` variable.
+- Hash (named) parameters are accessed using the `hash` variable.
+
+:::
+
+
+## Custom variables
+
+You can store custom variables at the workspace root, in a global file called `.blaze/variables.json`.
+
+```json title=".blaze/variables.json"
+{
+    "vars": {
+        "message": "Hello world!",
+        "some": {
+            "nested": {
+                "variable": 1
+            }
+        },
+        "some-values": [1, 2, 3]
+    }
+}
+```
+
+:::info
+
+This configuration file also supports Jsonnet and YAML.
+
+:::
+
+### Extra variable files
+
+You can add also add extra files paths with the `include` key, This can be useful if you want to have non-versioned, user-provided variables :
+
+```json  title=".blaze/variables.json"
+{
+    "vars": {
+        "my-message": "Hello world!"
+    },
+    "include": [
+        "{{ root }}/user-variables.json"
+    ]
+}
+```
+
+```json title="user-variables.json"
+{
+    "my-message": "What's up world?"
+}
+```
+
+In this example, the variable named `my-message` will be overriden with a new value `What's up world?`.
+
+Relative paths will be analyzed from the `.blaze` directory. Absolute paths are also supported.
+
+Missing files will be considered as an error. If you want any of these files to be optional, you can use the following syntax :
+
+```json title=".blaze/variables.json"
+{
+    "vars": {
+        "global-var": "Hello world!"
+    },
+    "include": [
+        {
+            "path": "{{ root }}/optional-user-variables.json",
+            "optional": true
+        }
+    ]
+}
+```
+
+:::info
+
+These extra configuration file also supports Jsonnet and YAML.
+
+:::
+
+### Variables overriding order
+
+This is the order in which variables are being analyzed and might override the previous ones :
+
+1) Global variables declared at the `vars` key of `.blaze/variables.json`
+2) Extra file declared at the `include` key of `.blaze/variables.json` (in the order of declaration)
+3) User provided variables files through the `--vars-file` command line option.
+4) User provided variables through the `--json-var`, `--jsonnet-var`, `yaml-var` command line options.
+5) User provided variables through the `--str-var` command line option. 
+
+Overriding is done using [JSON Merge Patch](https://datatracker.ietf.org/doc/html/rfc7396)
+
+:::warning
+
+If you override variables with a non-object value, it will completely replace the previous state. 
+Be careful when using YAML since an empty file will be deserialized as `null`. Use an empty object notation `{}` instead.
+
+:::

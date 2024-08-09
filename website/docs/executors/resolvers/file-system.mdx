@@ -1,0 +1,59 @@
+---
+id: file-system
+title: From the file system
+tags:
+    - Custom executors
+    - Resolvers
+    - Local
+    - File
+---
+
+# Resolving an executor from the file system
+
+When using the `file` scheme, Blaze will lookup for an executor source files at the specified path :
+
+The full URL must match the following format : `file://<path>`.
+
+```json
+{
+    "executor": "file://path/to/my/custom/executor"
+}
+```
+
+`path` must point to the root directory of your executor source files. If it is not an absolute path, it will be treated as relative to the workspace root directory.
+
+## Supported options
+
+Specific options can be passed by using an object instead of a simple URL string.
+
+The following parameters are supported :
+
+- `url`: The `file://` URL representing the executor's root directory.
+- `kind` (optional): Specify the executor type. If not specified, it will be inferred by looking at the presence of either a `package.json`, or a `Cargo.toml` file at the specified path. In most cases, you will not have to specify it explicitely. Possible values are :
+    - `Rust`
+    - `Node`
+- `rebuild`: Choose a strategy for when Blaze should re-build the executor. Possible values are :
+    - `Always`: Always rebuild the executor.
+    - `OnChange`: Rebuild when files have changed.
+- `watch`: An array of file changes matcher which works like the the [`cache.invalidateWhen.inputChanges` keys of your targets configuration](../../guides/caching.mdx#invalidate-when-input-files-change).
+
+The default options are the following :
+
+```json
+{
+    "executor": {
+        "url": "file://path/to/my/custom/executor",
+        "build": "OnChanges",
+        "watch": [
+            {
+                "pattern": "**",
+                "exclude": [
+                    "target/**",
+                    "node_modules/**"
+                ],
+                "behavior": "Mixed"
+            }
+        ]
+    }
+}
+```

@@ -1,0 +1,97 @@
+---
+id: running-commands
+title: Running commands
+---
+
+It can be very cumbersome to launch simple shell commands across the workspace since it often requires to change the current directory.
+
+Blaze provides a simple way to launch commands from the root folder of any project, using the `spawn` subcommand.
+
+The `spawn` command re-uses some concepts from the `run` command, such as project selection and parallelism, but please note that unlike Blaze targets system, it does not benefit from any cache feature. We strongly recommend to write targets as soon as possible when executing commands in your development cycle, and not rely too much on the `spawn` command.
+
+## Basic usage
+
+This command will list the files at the root of a project called `my-project`.
+
+```sh
+blaze spawn -p my-project ls
+```
+
+In fact, the `spawn` subcommand accepts the same selection options as the `run` command.
+
+If you have options starting with dashes in the command argument, you need to prefix it with `--`:
+
+```sh
+blaze spawn -p my-project -- ls -lah
+```
+
+Note that you might have to escape some parts of the command since it might contain some special characters that will get interpreted in your current shell:
+
+```sh
+blaze spawn -p my-project -- 
+```
+
+The `spawn` command argument will always be executed in a shell. All environment variables will be loaded from `.env` files, just like the `run` command.
+
+## Multiple projects
+
+This command will list the files at the root of `project-1`, `project-2` and `project-3`.
+
+```sh
+blaze spawn -p project-1,project-2,project-3 -- ls
+```
+
+You can also use the `-a`/`--all` flag in order to launch the command in every project.
+
+The `--include`/`--exclude` patterns are also supported.
+
+## Default project selection
+
+Just like the `run` command, the workspace default project selector will be used if no selection option is provided.
+
+```sh
+blaze spawn ls
+```
+
+Checkout [this section](../guides/workspace.mdx#default-selector) for more information about how to configure the default project selector.
+
+## Customizing the shell
+
+If you want to customize the shell program that is used to launch the command, you can pass an `-s` (or `--shell`) option :
+
+```sh
+blaze spawn -s /bin/zsh -p my-project -- ls
+```
+
+When needed, you can specify the shell kind (similarly to the [`std:commands`](../executors/std/commands.mdx) executor), using the `--shell-type` option :
+
+```sh
+blaze spawn -s /bin/some-weird-shell --shell-type Posix -p my-project -- ls
+```
+
+## Parallelism
+
+One of the advantages of using the `spawn` command is that you can run commands in parallel across multiple projects.
+
+[It is configured very much like the `run` subcommand](./running-targets.mdx#parallelism).
+
+The default degree of parallelism is `None`, which means commands will run sequentially. 
+
+The setting defined at the workspace level (`settings.parallelism`) can globally override the default value.
+
+You can also use the `--parallelism`/`-p` option 
+
+## Templating
+
+You can interpolate strings within the command provided to `spawn`.
+
+In this example, all project names are displayed :
+
+```
+blaze spawn --all -- echo {{ project.name }}
+```
+
+Available variables are :
+
+- The same as when rendering a [project configuration file](../configuration/project/variables.mdx).
+- If you use the `--workspace` flag, available variables are the same as when rendering a [workspace configuration file](../configuration/workspace/variables.mdx).

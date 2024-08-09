@@ -1,0 +1,222 @@
+---
+id: writing-targets
+title: Writing targets
+---
+
+## Declaring targets
+
+Here is an example of a project configuration file, containing a single `build` target :
+
+```json title="project.json"
+{
+    "targets": {
+        "build": {
+            "executor": "std:commands",
+            "options": {
+                "commands": [
+                    "cargo build"
+                ]
+            }
+        }
+    }
+}
+```
+
+The `targets` key of our project configuration is an object where keys are target names.
+
+For each target key, we associate a configuration object that describes the target.
+
+Namely, we will find in there everything that deals with :
+
+- What should be run ?
+- What is the cache strategy ?
+- What are the dependencies (other targets to be ran before this one) ?
+
+:::info
+
+You can have as many targets as you like, we recommend to use consistent target names across projects since it allows launching the same target for multiple projects in a single `run` command.
+
+:::
+
+On the last project example, if we run the `build` target, the `npm run build` command will be executed.
+
+## Executor configuration
+
+The `executor` key indicates which [*executor*](../executors/executors.mdx) we want to use. 
+
+An executor defines what kind of action we want to perform. Each executor works differently, and they are identified using URLs. 
+
+In our example, we are using the `std:commands` executor:
+
+- The `std:` scheme is a special scheme that means we need to resolve a standard (built-in) executor. 
+- `commands` is the name of the standard executor, it allows us to simply run arbitrary system commands.
+
+[Learn more about executors](../executors) (how to configure them and create new ones from scratch).
+
+## Passing options to the executor
+
+Executors can have options as an input.
+
+The executor options are declared at the `options` key of our target configuration.
+
+The expected value will depend on the executor that you are using.
+
+## Noop targets
+
+If you don't provide any executor for some targets, then the target will effectively *do nothing*.
+
+We call these *noop* targets.
+
+It can be very useful in some use cases.
+
+### Group targets across the workspace
+
+This behavior can be used to create *groups* of targets within a single one, using the `dependencies` options.
+
+In this example, running the `pipeline` target will not do anything on its own, but it will run the `build`, `test` and `lint` targets for the same project.
+
+Note that the `pipeline` target will fail if any of the dependencies fail to execute.
+
+```json
+{
+    "targets": {
+        "build": {
+            // ... some configuration ...
+        },
+        "test": {
+            // ... some configuration ...
+        },
+        "lint": {
+            // ... some configuration ...
+        },
+        "pipeline": {
+            "dependencies": [
+                "build",
+                "test",
+                "deploy"
+            ]
+        }
+    }
+}
+```
+
+More generally, creating noop targets with the `dependencies` key can be used to create target aliases, or to extend cache settings for an existing target.
+
+### Cached items
+
+Another use case for *noop* targets is to only act as *cached items*.
+
+Blaze cache system is meant to invalidate cache in a target by target manner.
+
+For example, if a project `a`'s `build` target depends on project `b`'s source code you could write this cache configuration :   
+
+```json title="a/project.json"
+{
+    "targets": {
+        "build": {
+            "cache": {
+                "invalidateWhen": {
+                    "inputChanges": [
+                        {
+                            "root": "{{ root }}/{{ workspace.projects.b.path }}",
+                            "pattern": "src/**/*"
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}
+```
+
+This is not ideal for several reasons :
+
+- If any other target depends on `b` project source code, you would have to write the same invalidation strategy for it. Cache information would then be duplicated and the invalidation process would happen twice. 
+- We are referencing files belonging to project `b` in project `a` and this could easily break. 
+
+Dependencies across targets must be specified only with the `dependencies` key. Since cache invalidation is propagated by default from dependency to parent, we can simply write the following configuration:
+
+```json title="b/project.json"
+{
+    "targets": {
+        "source": {
+            "cache": {
+                "invalidateWhen": {
+                    "inputChanges": [
+                        "src/**/*"
+                    ]
+                }
+            }
+        }
+    }
+}
+```
+
+```json title="a/project.json"
+{
+    "targets": {
+        "build": {
+            "executor": "std:commands",
+            "options": {
+                // some compilation options...
+            },
+            "dependencies": [
+                "b:source"
+            ],
+            "cache": {}
+        }
+    }
+}
+```
+
+The `source` target in project `b` is the *cached item*. It does not do anything on its own, but it can be referenced in project `a`'s dependencies.
+
+If the `source` target's cache is invalidated, then project `a`'s `build` cache will also be invalidated.
+
+This strategy allows for cache reusage and higher maintainability.
+
+## Describing targets 
+
+You can display human-readable information about targets for a specific project with the `describe` command.
+
+```sh
+blaze describe project <name of the project>
+```
+
+Each target will be listed with its name and its `description` field in a table.
+
+Each target name will then displayed, line per line.
+
+```
+blaze describe project -s
+```
+
+:::info
+
+For more options, checkout the [`describe` command documentation](../cli/describe).
+
+:::
+
+## Running the same target in multiple Blaze processes
+
+By default, a target can be executed by only one process at a time.
+
+If a target is already being executed in another process, Blaze will block and wait for it to finish.
+
+You can add a `stateless` flag to any target if you don't want this behavior.
+
+```json title="project.json"
+{
+    "targets": {
+        "my-target": {
+            "stateless": true
+        }
+    }
+}
+```
+
+:::warning
+
+Make sure that the target does not deal with state when placing `stateless` to `true`.
+
+:::

@@ -1,0 +1,24 @@
+---
+id: schema
+title: Schema
+tags:
+    - Configuration
+    - Workspace
+    - Schema
+---
+
+import CodeBlock from '@theme/CodeBlock'
+import schema from '../../../static/schemas/workspace-schema'
+import JSONSchemaViewer from '@theme/JSONSchemaViewer'
+
+The workspace configuration reference is based on the following JSON schema :
+
+<JSONSchemaViewer schema={ schema } viewerOptions={{ showExamples: true }} />
+
+[Schema direct link](/schemas/workspace-schema.json)
+
+Here is a raw version for this schema :
+
+<CodeBlock title="project-schema.json" language="json" showLineNumbers>
+    {JSON.stringify(schema, null, 2)}
+</CodeBlock>

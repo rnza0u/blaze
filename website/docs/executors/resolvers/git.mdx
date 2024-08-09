@@ -1,0 +1,120 @@
+---
+id: git
+title: Git
+tags:
+    - Custom executors
+    - Git
+---
+
+# Resolve an executor using Git
+
+You can resolve an executor from any Git repository using different transport protocols.
+
+## Using HTTP
+
+```json
+{
+    "executor": {
+        "url": "https://github.com/username/my-executor.git",
+        "format": "Git"
+    }
+}
+```
+
+## Using SSH
+
+When using the `ssh://` protocol, Blaze will retrieve the executor files from a Git repository on a SSH remote host.
+
+You will need to provide the path to the Git repo on the remote side, as well as transport and authentication options.
+
+```json
+{
+    "executor": {
+        "url": "ssh://github.com/my-username/my-executor.git",
+        "insecure": false,
+        "fingerprints": [
+            "SHA256:uNiVztksCsDhcc0u9e8BujQXVUpKZIDTMczCvj3tD2s",
+            "SHA256:p2QAMXNIC1TJYWeIOttrVc98/R1BUFWu3/LiyKgUfQM",
+            "SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU"
+        ],
+        "authentication": {
+            "key": "{{ environment.HOME }}/my-private-key.pem",
+            "passphrase": "{{ environment.PRIVATE_KEY_PASSPHRASE }}",
+            "username": "git"
+        }
+    }
+}
+```
+
+SSH URLs must have the following format : `ssh://[<username>@]<host>[:<port>]/<path>`
+
+The following parameters are supported :
+
+- `insecure` : This flag will completely disable remote host key validation mecanisms when the SSH connection is started. Defaults to `false` and must only be used for debugging purposes and will effectively create an insecure context. 
+- `fingerprints` (*optional*): An array of server key fingerprints that can be used in order to validate the server host key.  
+- `authentication` (*optional*): An [SSH authentication object](#ssh-authentication-methods) containing credentials to use when authenticating.
+
+Note that the `~/.ssh/known_hosts` file will always be used in first instance when verifying the server's public key.
+
+We strongly recommend to always provide the `fingerprints` parameter in case Blaze is executed on a machine that does not know the SSH remote host.
+
+You can easily generate fingerprints by using the following command :
+
+```sh
+ssh-keyscan my-ssh-server.com | ssh-keygen -lf -
+```
+
+### SSH Authentication methods
+
+The following authentication methods are supported :
+
+- Private key based
+- Password based
+
+#### Using a private key
+
+```json
+{
+    "key": "{{ environment.HOME }}/my-private-key.pem",
+    "passphrase": "{{ environment.PRIVATE_KEY_PASSPHRASE }}",
+    "username": "git"
+}
+```
+
+- `key`: Path to the private key file.
+- `passphrase` (*optional*): The passphrase to use for decrypting the private key file.
+- `username` (*optional*): The username to use when authenticating (if not already provided in the URL).
+
+#### Using a username and password
+
+```json
+{
+    "username": "{{ environment.HOME }}/my-private-key.pem",
+    "passphrase": "{{ environment.PRIVATE_KEY_PASSPHRASE }}",
+    "username": "git"
+}
+```
+
+- `password`: The password to use when authenticating.
+- `username` (*optional*): The username to use when authenticating (if not already provided in the URL).
+
+## Using the Git protocol
+
+```json
+{
+    "executor": "git://my-git-server.com/my-executor.git"
+}
+```
+
+Only the `git://` scheme supports providing a single URL as an executor reference.
+
+## Git related options
+
+- `branch` : Checkout a specific branch. For example `master`.
+- `tag`: Checkout a commit referenced by a particular tag. For example `1.0`.
+- `rev`: Checkout a commit referenced by a particular [revision string](https://git-scm.com/docs/gitrevisions#_specifying_revisions). For example `f2c6b1f2e9cbe24a124762c13aa2d0def2466cf8`.
+- `path` : Path to the executor files from the repository index. Defaults to the repository index `/`.
+- `kind` : Specify the executor project type. Similar as [the `kind` option when resolving executors from the file system](./file-system.mdx#supported-options).
+- `pull`: If `true`, Blaze will always try to pull last changes from the repository. `false` is set by default. Please note that this option must be kept to `false` if something like a commit hash was specified using the `rev` Option.
+
+If the `branch`, `tag` or `rev` parameter is not supplied, the default branch will be checked out.

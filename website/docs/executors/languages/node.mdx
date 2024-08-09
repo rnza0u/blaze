@@ -1,0 +1,180 @@
+---
+id: node
+title: Node executors
+tags:
+    - Executors
+    - Node.js
+    - Typescript
+---
+
+# Node custom executors
+
+Custom Blaze executors can be written using the [Node Javascript runtime](https://nodejs.org).
+
+Usage of Node executors requires that `node` and `npm` are installed locally.
+
+The minimum required versions are the following:
+
+- Node >= 18.17
+- NPM >= 9.6.7
+
+You can customize the location of Node and NPM binaries by using the following environment variables:
+
+- `BLAZE_NODE_LOCATION`
+- `BLAZE_NPM_LOCATION`
+
+## How to write a Node executor ?
+
+A Node executor is a regular NPM project :
+
+```
++-- src
+    +-- index.ts
++-- package.json
++-- tsconfig.json
+```
+
+Your `package.json` file must contain the following dependencies and metadata :
+
+```json title="package.json"
+{
+    "name": "my-executor",
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        // if blaze.build is set to true, the build script will be called before using the executor for the first time
+        "build": "tsc"
+    },
+    "dependencies": {
+        "@blaze-repo/node-devkit": "^1.0.0"
+    },
+    "devDependencies": {
+        "typescript": "latest"
+    },
+    "blaze": {
+        "version": "1", // must be set to "1"
+        "type": "executor", // must be set to "executor"
+        "path": "dist/index.js", // relative path to the compiled javascript module,
+        "build": true, // if true, blaze will launch the build NPM script, you can also pass a custom NPM script name.
+        "install": true // if true, blaze will launch "npm install"
+    }
+}
+```
+
+The `@blaze-repo/node-devkit` [NPM package](https://www.npmjs.com/package/@blaze-repo/node-devkit) provides type definitions for writing executors.
+
+Your compiled executor must be an ES module, so you either need to have:
+
+- A `type` property at the root of your `package.json` file, with `module` as a value.
+- An `.mjs` extension for your compiled module.
+
+In your module source code, you only need export a single function as a default export.
+
+```ts title="src/index.ts"
+import { Executor } from '@blaze-repo/node-devkit'
+
+const executor: Executor = async (context, options) => {
+    context.logger.info('Hello Blaze!')
+}
+
+export default executor
+```
+
+The function parameters are the following:
+
+- `context`: Provides information about the current target execution and the associated workspace/project. It also provides a `Logger` instance that can be used for writing messages through Blaze logging system.
+- `options`: The configuration-specific options value for this target execution.
+
+You can write your executor function as returning a `Promise<void>`, or simply `void` if it needs to remain synchronous. 
+
+## Parsing the `options` object
+
+Strict input validation is enforced through the `Value` union type :
+
+```ts
+type Value = null | number | string | boolean | { [key: string]: Value } | Array<Value>
+```
+
+You can use simple type narrowing to extract and validate user input.
+
+For example, if the input has the following format :
+
+```json
+{
+    "numbers": [1, 2, 3],
+    "str": "foobar"
+}
+```
+
+You will need to perform this type of validation :
+
+```ts
+import { Executor } from '@blaze-repo/node-devkit'
+
+const executor: Executor = async (context, options) => {
+    
+    if (options === null || typeof options !== 'object' || Array.isArray(options)){
+        throw Error('options must be an object')
+    }
+    
+    const { numbers, str } = options
+
+    if (!Array.isArray(numbers)){
+        throw Error('"numbers" must be an array')
+    }
+    
+    if (!numbers.every((i): i is number => typeof i === 'number')){
+        throw Error('"numbers" must contain numbers')
+    }
+    
+    if (typeof str !== 'string'){
+        throw Error('"str" must be a string')
+    }
+    
+    console.log(str.toUpperCase())
+    console.log(numbers[0] + numbers[1] + numbers[2])
+}
+
+export default executor
+```
+
+You could also use librairies such as [`zod`](https://www.npmjs.com/package/zod) to perform both validation and type narrowing in a more concise and declarative way.
+
+```ts
+import { Executor } from '@blaze-repo/node-devkit'
+import { z } from 'zod'
+
+const optionsSchema = z.object({
+    numbers: z.array(z.number()),
+    str: z.string()
+})
+
+const executor: Executor = async (context, options) => {
+    
+    const { str, numbers } = await optionsSchema.parseAsync(options)
+    
+    console.log(str.toUpperCase())
+    console.log(numbers[0] + numbers[1] + numbers[2])
+}
+
+export default executor
+```
+
+## Code rules
+
+Unhandled promise rejections mode is set to [`strict`](https://nodejs.org/api/cli.html#--unhandled-rejectionsmode) in Node executors.
+
+The executor still needs to execute some code after your the function has returned `void` or when the returned `Promise` is fullfilled. Consequently, calling [`process.exit`](https://nodejs.org/api/process.html#processexitcode) or any API that would force termination of the current process would result in undefined behavior.
+
+When writing asynchronous executors, you will need to make sure that all your tasks are completed before the returned `Promise` is resolved. If any asynchronous tasks are still pending after the function has returned `void` or a fullfilled `Promise`, there is no guarantee that the process will wait for their termination.
+
+## Node executors flow
+
+Node executors flow is the following :
+
+- Run `npm install`.
+- Run the `build` script from `package.json` if it exists.
+- Dynamically import the executor function from the file referenced in `package.json` => `blaze.path`.
+- Call the executor function, waiting for resolution if the return value is a `Promise<void>`.
+
+The two first steps are skipped if the executor is already installed.

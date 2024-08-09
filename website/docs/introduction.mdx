@@ -1,0 +1,99 @@
+---
+id: introduction
+title: Introduction
+tags:
+    - Get started
+    - What is it
+    - How it works
+---
+
+Welcome to Blaze docs.
+
+It is split into different sections :
+
+- [**Guides**](./guides/get-started.mdx) : The main documentation on how to use Blaze.
+- [**CLI reference**](./cli/blaze.mdx) : Manuals for each Blaze command.
+- **Configuration reference** : Blaze configuration files schemas.
+- [**Executors**](./executors/executors.mdx) : All about executors, Blaze plugin system.
+
+For issues and bugs, please make sure to use [our issue tracker](https://github.com/rnza0u/blaze/issues).
+
+## What is a monorepo ?
+
+If you have never heard of monorepos, the concept is actually quite simple.
+
+Traditionnally, each *component* lives in its own repository :
+
+```
+├── my-company-web-app/
+|   ├── .git/
+|   ├── src/
+├── my-company-server/
+|   ├── .git/
+|   ├── src/
+├── my-company-design-system/
+|   ├── .git/
+|   ├── src/
+```
+
+A monorepo is based on a single repository where you would store all the code and assets for every component in your projects :
+
+```
+├── my-company/
+|   ├── web-app/
+|   |   ├── src/
+|   ├── server/
+|   |   ├── src/
+|   ├── design-system/
+|   |   ├── src/
+├── .git/
+```
+
+A monorepo gives the following advantages:
+
+- **Reusability :** You can easily reuse things among projects, whether they are applications, librairies, CI/CD parts, or tools.
+- **Simplicity :** You have one single repository to sync with. A lot of people find it difficult to deal with many repositories, especially when it comes to integration and deployment.
+- **Easy dependencies management :** It is much easier to manage dependencies between projects and make them work together during development when using a monorepo.
+- **Better collaboration :** It it easier for teams to collaborate since every project is in the same monorepo.
+- **Better versioning :** Allows you to perform [atomic commits](https://en.wikipedia.org/wiki/Atomic_commit) across projects.
+
+:::info
+
+If you want to learn more about monorepos and why you should be using one, be sure to checkout [this website](https://monorepo.tools/)
+
+:::
+
+## What is Blaze ?
+
+Blaze is a build system which aims to be simple, fast, and flexible.
+
+It is written with ❤️ in [Rust](https://www.rust-lang.org) and is [**absolutely free**](https://github.com/rnza0u/main/blob/master/blaze/LICENCE) to use.
+
+Its main goal is to allow you to run multiple tasks across your monorepo using in a efficient.
+
+Blaze is mainly intended to be used in a monorepo, but it can also be used for more general task running and productivity tooling.
+
+It comes with the following features :
+
+- Fully configurable cache
+- Parallelization
+- Support for JSON, YAML and Jsonnet, with advanced templating features
+- A flexible plugin system for running tasks
+
+## Other open-source monorepo tools like Blaze
+
+Blaze is inspired from tools like [Nx](https://nx.dev/), [Turborepo](https://turborepo.org) (and others).
+
+Choose Blaze if you **want** your build system to:
+
+- ✅ Be minimalistic and flexible.
+- ✅ Let you (and only you) manage and organize your development workflow.
+- ✅ Be blazing fast !
+
+Also, choose Blaze if you **don't want** your build system to: 
+
+- ❌ Manage your application dependencies.
+- ❌ Perform code analysis.
+- ❌ Be aware of the technologies you're using.
+
+Now let's dive in and start learning how it works...

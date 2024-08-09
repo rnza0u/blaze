@@ -1,0 +1,317 @@
+---
+id: workspace
+title: Workspace management
+---
+
+A Blaze workspace is composed of a set of projects.
+
+A project can representing anything, from a single asset to a monolithic full-app. You can have as many as you want.
+
+A project might require tasks, build logic to be done, or can also be made out of simple static files.
+
+Your workspace configuration is mostly done in a declarative format (Jsonnet, JSON, or YAML).
+
+:::info
+
+[Jsonnet](https://jsonnet.org/) is Blaze default file format. Don't worry if you are only familiar with JSON because any JSON is a valid Jsonnet document. It offers much more features than JSON and you will be able to learn some patterns along this documentation.
+
+:::
+
+Each project is described in its own configuration file. In this example, `project.json` files :
+
+```
+├── my-company/
+|   ├── .git/
+|   ├── web-app/
+|   |   ├── src/
+|   |   ├── project.json
+|   ├── server/
+|   |   ├── src/
+|   |   ├── project.json
+|   ├── design-system/
+|   |   ├── src/
+|   |   ├── project.json
+|   ├── workspace.json
+```
+
+## Workspace configuration
+
+The `workspace.json` file is the monorepo's main configuration file. It is the place to go when you want to :
+
+- Declare projects and their locations.
+- Set global settings across the whole monorepo.
+
+It must be located at the root of your monorepo. Blaze will lookup for any of these variants :
+
+- `workspace.json`
+- `workspace.yaml`
+- `workspace.yml`
+- `workspace.jsonnet`
+
+Here is an example of the default version that gets generated when calling the `init` command :
+
+```json
+{
+  "name": "my-workspace",
+  "projects": {},
+  "settings": {
+    "defaultSelector": [],
+    "selectors": {},
+    "parallelism": "None",
+    "logLevel": "Warn",
+    "resolutionParallelism": "None"
+  }
+}
+```
+
+### Manage projects
+
+The `projects` key contains references to all of your workspace projects.
+
+It must be an object mapping where each key is a project name. 
+
+Values are relative paths from the workspace root to the folder where the project is located.
+
+For instance, the following configuration ...
+
+```json
+{
+  "projects": {
+    "app-1-webapp": "app-1/webapp",
+    "app-1-server": "app-1/server",
+    "app-2-webapp": "app-2/webapp",
+    "app-2-server": "app-2/server",
+    "design-system": "design-system"
+  }
+}
+```
+
+... could match the following file structure :
+
+```
+├── app-1/
+|  ├── webapp/
+|  |  ├── project.json
+|  ├── server/
+|  |  ├── project.json
+├── app-2/
+|  ├── webapp/
+|  |  ├── project.json
+|  ├── server/
+|  |  ├── project.json
+├── design-system
+|  ├── project.json
+```
+
+### Project reference fields
+
+Projects can be provided as simple paths at the `projects` key. 
+
+```json
+{
+  "projects": {
+    "project-name": "path/to/the/project"
+  }
+}
+``` 
+
+This is actually a syntaxic sugar for the following:
+
+```json
+{
+  "projects": {
+    "project-name": {
+      "path": "path/to/the/project"
+    }
+  }
+}
+```
+
+It is also possible to pass more options.
+
+```json
+{
+  "projects": {
+    "web-app": {
+      "path": "path/to/the/project",
+      "tags": ["tag1", "tag2", "tag3"],
+      "description": "Some description for my project"
+    },
+  }
+}
+```
+
+- `tags`: A list of tags for this project. Useful for when [selecting projects](./running-targets.mdx#using-tags).
+- `description`: A description for the project. Useful for when [describing the workspace](#describing-the-workspace).
+
+### Global settings
+
+The `settings` key is where you can set some default settings across the whole monorepo.
+
+#### Logging level
+
+The `settings.logLevel` key allows you to set the global log level.
+
+There are 4 log levels in Blaze :
+
+- `Info`: When some useful information is logged
+- `Error`: When an error is logged
+- `Warn`: When a warning message is logged
+- `Debug`: For debugging purposes
+
+When you set a log level, every level that follows in the list will not be printed to the console.
+
+The default log level is `Warn`, so only `Info`, `Error` and `Warn` logs will be printed.
+
+`Info` level messages will be printed to `stdout`, all other levels are printed to `stderr`. If you want to redirect Blaze output, you probably want to make sure you redirect both of these streams.
+
+:::info
+
+You can also customize Blaze log level with the global CLI option `--log-level`.
+
+:::
+
+#### Parallelism
+
+The level of parallelism to use when running targets across multiple projects can be customized using the `settings.parallelism` key.
+
+There are four possible values :
+
+- `Infinite`: Blaze will run as many executions in parallel as possible, regardless of the numbers of cores on the system.
+- `All`: The maximum number of targets running in parallel is set to the numbers of logical cores on the system.
+- `None`: Run each target sequentially.
+- A number representing the maximum number of targets that can run in parallel.
+
+:::info
+
+The `run` command also allows to override the level of parallelism with the [`--parallelism` option](./running-targets.mdx#parallelism).
+
+:::
+
+#### Resolution parallelism
+
+The level of parallelism to use when resolving custom executors can be customized using the `settings.resolutionParallelism` key.
+
+It works exactly like the [`settings.parallelism` parameter](#parallelism).
+
+#### Project selection
+
+##### Named selectors
+
+Named selectors allows you to create reusable selectors. 
+
+You can define named selectors in the workspace configuration, at the `settings.selectors` :
+
+```json
+{
+  "projects": {
+    "app-1-webapp": {
+      "path": "app-1/webapp",
+      "tags": ["web", "js"]
+    },
+    "app-1-server": {
+      "path": "app-1/server",
+      "tags": ["server", "rust"]
+    },
+    "app-1-docs": {
+      "path": "app-1/docs",
+      "tags": ["docs"]
+    },
+    "app-2-webapp": {
+      "path": "app-2/webapp",
+      "tags": ["web", "js"]
+    },
+    "app-2-server": {
+      "path": "app-2/server",
+      "tags": ["server", "node"]
+    },
+    "shared-lib-1": {
+      "path": "libs/shared-lib-1",
+      "tags": ["js", "lib"]
+    },
+    "shared-lib-2": {
+      "path": "libs/shared-lib-2",
+      "tags": ["rust", "lib"]
+    }
+  },
+  "settings": {
+    "selectors": {
+      // simple array of project names
+      "app-2": [
+        "app-2-webapp",
+        "app-2-server"
+      ],
+      // include/exclude patterns with regular expressions
+      "app-1-runtime": {
+        "include": [
+          "app-1-.*"
+        ],
+        "exclude": [
+          "app-1-docs"
+        ]
+      },
+      // all project with at least one of the following tags
+      "libs": {
+        "tags": ["lib"]
+      }
+    }
+  }
+}
+```
+
+When using a command that requires selecting projects, the `-s` option (`--selector` in its long form) allows you to use one of these named selectors. 
+
+##### Default selector
+
+WHen selecting projects, you can also omit the project selector.
+
+In that case, any selector declared at the `settings.defaultSelector` key will be used.
+
+```json
+{
+  "projects": {
+    "webapp": "apps/webapp",
+    "server": "apps/server",
+    "common-lib": "libs/common-lib"
+  },
+  "settings": {
+    "defaultSelector": [
+      "webapp", 
+      "server"
+    ]
+  }
+}
+```
+
+In this example, `webapp` and `server` projects will be selected when no selector is provided.
+
+You can use any project selector, not just an array of project names.
+
+## Project configurations
+
+Each `project.json` file will contain *targets* that are part of the project. 
+
+A target is a single unit of work in your development cycle, for e.g : `build`, `test`, `deploy`.
+
+Blaze does not enforce how your development cycle should look like. We strongly encourage using consistent target names across projects, but they could really be whatever you want.
+
+Each target contains
+
+- Code that is to be ran for each of these targets, using [provided executors](../executors/executors.mdx#standard-executors) or [custom ones](../executors/executors.mdx#custom-executors)
+- Dependencies for each target (for e.g, the `build` target of the `web-app` project could depend on the `build` target of the `design-system` project)
+- Cache configuration, so that Blaze knows when a target execution is not to be done again.
+
+For more information on configuration files, you can visit :
+
+- The [workspace configuration documentation schema](../configuration/workspace/schema.mdx).
+- The [project configuration documentation schema](../configuration/project/schema.mdx).
+
+## Describing the workspace
+
+You can display human-readable information about the workspace by using the `describe` command.
+
+```sh
+blaze describe workspace
+```
+
+All projects will be listed in a table, along with their `description` fields.

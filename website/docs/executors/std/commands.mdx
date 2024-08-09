@@ -1,0 +1,371 @@
+---
+id: commands
+title: std:commands
+tags:
+    - Executors
+    - std
+    - commands
+---
+
+The `std:commands` executor is used to order to execute some system commands.
+
+It is the most common executors in Blaze.
+
+```json
+{
+    "executor": "std:commands",
+    "options": {
+        "commands": [
+            "npm run build",
+            "npm run test",
+            "npm run deploy"
+        ]
+    }
+}
+```
+
+In this example, these three commands will be executed sequentially.
+
+You can customize commands by providing objects instead of raw strings in the `commands` array.
+
+## Providing a program to run
+
+The `program` option is required if you provide a command in its object form.
+
+It can be :
+
+- A program on your `PATH` variable
+- A relative path to a program, from the current working directory
+- An absolute path to a program
+
+Your program can be valid executable file or a script with a valid shebang as its first line (for example `#!/bin/sh`, or `#!/usr/bin/env node`), you can also call it.
+
+```json
+{
+    "commands": [
+        {
+            "program": "ls"
+        }
+    ]
+}
+
+```
+
+On Windows, you can only call executable files such as `.exe`. If you want to call a script in Windows you could use the `shell` option.
+
+```json
+{
+    "commands": [
+        // call script using its absolute path
+        "{{ project.root }}/scripts/my_script.ps1"
+    ],
+    // launch commands directly into powershell
+    "shell": "powershell"
+}
+
+```
+
+:::info
+
+If you only want to launch a single script file, you should use the [`std:exec` standard executor](./exec.mdx).
+
+:::
+
+## Providing arguments
+
+You can provide arguments for the command using the `arguments` options.
+
+```json
+{
+    "commands": [
+        {
+            "program": "cargo",
+            "arguments": [
+                "build", 
+                "--release"
+            ]
+        }
+    ]
+}
+
+```
+
+When you're using the command short form, the provided command string is split at every whitespace and the first substring will be treated as the `program` option, the rest of the array is set to be the `arguments` options.
+
+## Using a shell
+
+Sometimes, you need to evaluate shell expressions such as variables, subcommands, computed values etc...
+
+You can launch commands in a shell by using the `shell` option.
+
+```json
+{
+    "command": [
+        "echo $SHELL" // prints /bin/sh
+    ],
+    "shell": true
+}
+```
+
+When set to `true`, commands will be launched using `/bin/sh` on Unix systems, or `C:\Windows\System32\cmd.exe` on Windows.
+
+You can also provide your own shell using a program path :
+
+```json
+{
+    "executor": "std:commands",
+    "options": {
+        "command": [
+            "Write-Host 'Hello, World!'"
+        ],
+        "shell": "powershell"
+    }
+}
+```
+
+Supported shell types are :
+- On Unix :
+    - sh
+    - bash
+- On Windows :
+    - cmd
+    - powershell
+
+If you shell program is at a custom location, you can specify its path through the `shell` option.
+
+The provided string can be any same type of value that the commands' `program` parameter accepts.
+
+```json
+{
+    "commands": [
+        "echo $SHELL" // prints /custom/path/to/sh
+    ],
+    "shell": "/custom/path/to/sh"
+}
+
+```
+
+Blaze will try to infer which shell type it is from the program name.
+
+If, for some reason, Blaze cannot infer what shell type you need, you can specify it explicitly by providing an object instead of a raw string :
+
+```json
+{
+    "executor": "std:commands",
+    "options": {
+        "commands": [],
+        "shell": {
+            "kind": "Posix", // can be "Posix", "Powershell" or "Cmd".
+            "program": "/custom/path/to/my-bash"
+        }
+    }
+}
+```
+
+If you shell type is not supported, you can still call the shell program directly without the `shell` option.
+
+In fact, the `shell` option is a short syntax for doing so.
+
+```json
+{
+    "commands": [
+        // prints /bin/sh
+        {
+            "program": "/bin/sh",
+            "arguments": [
+                "-c", 
+                "echo $SHELL"
+            ]
+        }
+    ]
+}
+
+```
+
+Is the same as :
+
+```json
+{
+    "commands": [
+        "echo $SHELL"
+    ],
+    "shell": "/bin/sh"
+}
+
+```
+
+## Run commands in the background
+
+You can use the `detach` option if you want to run a command as a detached process.
+
+Detached means any of the following commands will not wait for this process to terminate before being executed.
+
+It can be useful if you want a long running operation to be non-blocking and run in the background while other commands are running sequentially.
+
+```json
+{
+    "commands": [
+        {
+            "program": "npm",
+            "arguments": ["start"],
+            "detach": true
+        },
+        "npm run test:e2e"
+    ],
+}
+```
+
+It also allows running multiple commands in parallel.
+
+:::info
+
+Be sure to checkout the [onFailure](#command-failure-strategies) option if you want to handle how detached processes are terminated when a failure occurs.
+
+:::
+
+## Set environment variables
+
+The `environment` key allows you to add custom environment variables for specific commands.
+
+Each of these variables will be set at the command child process level.
+
+```json
+{
+    "commands": [
+        {
+            "program": "echo",
+            "arguments": ["$SOME_VARIABLE"],
+            "environment": {
+                "SOME_VARIABLE": "Hello world!"
+            }
+        }
+    ],
+    "shell": true
+}
+```
+
+In this example, we also use the <a href="#using-a-shell">`shell`</a> option because we are displaying the variable through the `echo` command. It can be useful if you want to use environment variables within the command itself. 
+
+## Command failure strategies
+
+By default, if any of the commands fails, the executor will not run any of the pending commands and will wait for detached processes to finish, you can customize this behavior using the `onFailure` option.
+
+### `ForceExit`
+
+If you want to immediately terminate all detached processes if a particular command fails, you can use `ForceExit` as a value.
+
+```json
+{
+    "commands": [
+        {
+            "program": "sleep",
+            "arguments": ["30"],
+            "detached": true
+        },
+        {
+            "program": "false",
+            "onFailure": "ForceExit"
+        }
+    ]
+}
+
+```
+
+In this example, the second command will always fail (that's what the `false` program does).
+
+The first command will eventually not last 30 seconds because it is going to be killed as soon as the second command terminates.
+
+### `Ignore`
+
+You can also choose to completely ignore failure for specific commands by using the `Ignore` value.
+
+```json
+{
+    "commands": [
+        {
+            "program": "false",
+            "onFailure": "Ignore"
+        },
+        "echo Hello world!"
+    ]
+}
+
+```
+
+In this example, the first command's failure will be ignored and the second command will be executed.
+
+### `Restart`
+
+If you want to restart a command that fails, you can use the `Restart` value.
+
+This can be useful if your command is likely to fail in some circumstances.
+
+It can also be used in order to produce some sort of a retry loop (when starting up a local server for example).
+
+```json
+{
+    "commands": [
+        // start application server
+        {
+            "program": "npm",
+            "arguments": [
+                "start", 
+                "--" 
+                "--port", "8080", 
+                "--host", "127.0.0.1"
+            ],
+            "detached": true
+        }
+        // try to connect to the server, restart until server is listening.
+        {
+            "program": "netcat",
+            "arguments": ["-z", "127.0.0.1", "8080"],
+            "onFailure": "Restart"
+        },
+        // launch some E2E tests
+        "npm run test"
+    ],
+    "shell": "sh"
+}
+```
+
+### `Exit`
+
+If the command fails, the executor will wait for any detached processes to terminate and then return with an error.
+
+This is the default behavior if you don't specify any value.
+
+## Custom working directory
+
+By default, commands will run at the project root directory.
+
+If you want to set the current directory explicitly for the command process, you can use the `cwd` parameter :
+
+```json
+{
+    "commands": [
+        {
+            "program": "ls",
+            "cwd": "/path/to/directory"
+        }
+    ]
+}
+```
+
+This example will print the files in `/path/to/directory`.
+
+## Hide command output
+
+If you don't want to print any output for some commands, you can use the `quiet` flag.
+
+```json
+{
+    "commands": [
+        {
+            "program": "echo",
+            "arguments": ["you can't see me!"],
+            "quiet": true
+        }
+    ]
+}
+```
