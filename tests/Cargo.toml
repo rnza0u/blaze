@@ -2,7 +2,7 @@
 name = "blaze-tests"
 description = "Blaze integration tests suite."
 license = "MIT"
-repository = "https://github.com/rnza0u/main.git"
+repository = "https://github.com/rnza0u/blaze.git"
 homepage = "https://blaze-monorepo.dev"
 version = "0.2.11"
 edition = "2021"

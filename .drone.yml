@@ -1,0 +1,148 @@
+---
+image_pull_secrets:
+- DOCKER_REGISTRY_AUTHENTICATION_JSON
+kind: pipeline
+name: CI pipeline
+steps:
+- commands:
+  - restore-cache
+  environment:
+    CACHE_EXTRA_DIRS: /root/.cargo,/root/.npm,/root/.rustup,.blaze/cache,.blaze/repositories,.blaze/rust
+    CACHE_KEY: blaze-ci-${DRONE_BRANCH}
+    CACHE_STORAGE: /var/lib/cache
+  failure: ignore
+  image: registry.rnzaou.me/ci:latest
+  name: Restore cache
+  pull: always
+  volumes:
+  - name: cache
+    path: /var/lib/cache
+  when:
+    branch:
+      exclude:
+      - master
+- commands:
+  - blaze run --target lint --all
+  image: registry.rnzaou.me/ci:latest
+  name: Check
+  pull: always
+- commands:
+  - blaze run blaze-cli:build-release
+  - blaze run --projects blaze-website,blaze-downloads --target build
+  image: registry.rnzaou.me/ci:latest
+  name: Build
+  pull: always
+  volumes:
+  - name: docker-socket
+    path: /var/run/docker.sock
+  when:
+    branch:
+    - master
+- commands:
+  - blaze run blaze-tests:run-all
+  image: registry.rnzaou.me/ci:latest
+  name: Test
+  pull: always
+  volumes:
+  - name: docker-socket
+    path: /var/run/docker.sock
+  when:
+    branch:
+    - master
+- commands:
+  - create-cache
+  environment:
+    CACHE_EXTRA_DIRS: /root/.cargo,/root/.npm,/root/.rustup,.blaze/cache,.blaze/repositories,.blaze/rust
+    CACHE_KEY: blaze-ci-${DRONE_BRANCH}
+    CACHE_STORAGE: /var/lib/cache
+  failure: ignore
+  image: registry.rnzaou.me/ci:latest
+  name: Create cache
+  pull: always
+  volumes:
+  - name: cache
+    path: /var/lib/cache
+  when:
+    branch:
+      exclude:
+      - master
+trigger:
+  actions:
+  - push
+type: docker
+volumes:
+- host:
+    path: /var/lib/cache
+  name: cache
+- host:
+    path: /run/user/1002/docker.sock
+  name: docker-socket
+---
+image_pull_secrets:
+- DOCKER_REGISTRY_AUTHENTICATION_JSON
+kind: pipeline
+name: Publish pipeline
+steps:
+- commands:
+  - blaze run ci:docker-authenticate
+  environment:
+    DOCKER_REGISTRY_PASSWORD:
+      from_secret: DOCKER_REGISTRY_PASSWORD
+    DOCKER_REGISTRY_USERNAME:
+      from_secret: DOCKER_REGISTRY_USERNAME
+  image: registry.rnzaou.me/ci:latest
+  name: Setup
+  pull: always
+  volumes:
+  - name: docker-socket
+    path: /var/run/docker.sock
+- commands:
+  - blaze run blaze-cli:deploy
+  image: registry.rnzaou.me/ci:latest
+  name: Deploy binaries
+  pull: always
+  volumes:
+  - name: builds
+    path: /var/lib/blaze/builds
+  - name: docker-socket
+    path: /var/run/docker.sock
+- commands:
+  - blaze run blaze-cli:push-tags
+  image: registry.rnzaou.me/ci:latest
+  name: Push tags
+  pull: always
+  volumes:
+  - name: ssh
+    path: /root/.ssh
+- commands:
+  - blaze run --all --target publish
+  environment:
+    CARGO_TOKEN:
+      from_secret: CARGO_TOKEN
+    NPM_TOKEN:
+      from_secret: NPM_TOKEN
+  image: registry.rnzaou.me/ci:latest
+  name: Publish packages
+  pull: always
+  volumes:
+  - name: docker-socket
+    path: /var/run/docker.sock
+trigger:
+  actions:
+  - promote
+type: docker
+volumes:
+- host:
+    path: /var/lib/drone/.ssh
+  name: ssh
+- host:
+    path: /var/lib/blaze/builds
+  name: builds
+- host:
+    path: /run/user/1002/docker.sock
+  name: docker-socket
+---
+kind: signature
+hmac: f3cce5beed32b08ca33e0e9c3b6550da343e5e6d104ed851dd537c11d45880a7
+
+...

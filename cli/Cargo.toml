@@ -1,7 +1,7 @@
 [package]
 name = "blaze-cli"
 description = "A fast, simple and flexible build system."
-repository = "https://github.com/rnza0u/main.git"
+repository = "https://github.com/rnza0u/blaze.git"
 homepage = "https://blaze-monorepo.dev"
 version = "0.2.11"
 edition = "2021"

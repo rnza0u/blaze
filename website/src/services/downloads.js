@@ -7,9 +7,8 @@ function downloadsServer(path) {
             url.hostname = 'downloads.' + url.hostname
             return url
         })()
-    if (typeof path === 'string') {
+    if (typeof path === 'string')
         downloadsUrl.pathname = path
-    }
     return downloadsUrl
 }
 

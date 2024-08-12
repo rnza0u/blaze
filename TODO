@@ -2,3 +2,5 @@
 - [] cargo/npm resolvers
 - [] compose mode specs
 - [] fix init bug not correctly adding entries to .gitignore
+- [] fix circular dependencies detection
+- [] exclude for any selector

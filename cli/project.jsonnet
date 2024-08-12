@@ -1,9 +1,6 @@
 local blaze = std.extVar('blaze');
 local LocalEnv = import '../core/local-env.jsonnet';
 local targets = import '../targets.jsonnet';
-local cargoExtraOpt = ['-Z', 'bindeps'];
-local cargo = (import 'cargo.libsonnet')(blaze.vars.blaze.rust.channel, cargoExtraOpt);
-local executors = import 'executors.libsonnet';
 
 local workspaceDependencies = ['blaze-common', 'blaze-core'];
 
@@ -18,18 +15,17 @@ local buildsByTarget = {
         {
           program: if useCross then 'cross' else 'cargo',
           arguments: [
-                       '+' + blaze.vars.blaze.rust.channel,
-                       'build',
-                     ]
-                     + (if targets[name].release then ['--release'] else [])
-                     + (if targets[name].rustTriple != null then ['--target', targets[name].rustTriple] else []),
+            'build',
+          ]
+          + (if targets[name].release then ['--release'] else [])
+          + (if targets[name].rustTriple != null then ['--target', targets[name].rustTriple] else []),
           environment: {
-                         CARGO_TARGET_DIR: blaze.project.root + '/' + targets[name].targetDir,
-                       } + LocalEnv(targets[name])
-                       + (if useCross then {
-                            BLAZE_ROOT: blaze.root + '/blaze',
-                            CROSS_CONFIG: blaze.root + '/blaze/Cross.toml',
-                          } else {}),
+            CARGO_TARGET_DIR: blaze.project.root + '/' + targets[name].targetDir,
+          } + LocalEnv(targets[name])
+          + (if useCross then {
+              BLAZE_ROOT: blaze.root,
+              CROSS_CONFIG: blaze.root + '/Cross.toml',
+            } else {}),
         },
       ],
     },
@@ -45,14 +41,18 @@ local buildsByTarget = {
     },
     dependencies: [
       'source',
-    ] + (if useCross then ['docker-registry:authenticate'] else []),
+    ]
   }
   for name in std.objectFields(targets)
 };
 
 local deploymentsByTarget = {
   ['deploy-' + name]: {
-    executor: executors.packageBinaries(),
+    executor: {
+      url: 'https://github.com/rnza0u/blaze-executors.git',
+      path: 'package-binaries',
+      format: 'Git'
+    },
     options: {
       binPath: targets[name].cli.outputPath + '/' + targets[name].cli.filename,
       outputPath: '/var/lib/blaze/builds',
@@ -66,17 +66,8 @@ local deploymentsByTarget = {
   for name in finalTargets
 };
 
-local cargoTargets = cargo.all({
-  workspaceDependencies: workspaceDependencies,
-  environment: LocalEnv(targets.dev),
-  extraTargetDirs: std.map(
-    function(name) 'target-' + targets[name].rustTriple,
-    finalTargets
-  ),
-});
-
 {
-  targets: cargoTargets + buildsByTarget + deploymentsByTarget + {
+  targets: buildsByTarget + deploymentsByTarget + {
     run: {
       executor: 'std:commands',
       options: {
@@ -84,9 +75,9 @@ local cargoTargets = cargo.all({
           {
             program: 'cargo',
             arguments: [
-              '+' + blaze.vars.blaze.rust.channel,
               'run',
-            ] + ['--'] + blaze.vars.blaze.runArgs,
+              '--'
+            ] + blaze.vars.runArgs,
             environment: LocalEnv(targets.dev),
           },
         ],
@@ -106,7 +97,12 @@ local cargoTargets = cargo.all({
         commands: [
           {
             program: 'cargo',
-            arguments: ['+' + blaze.vars.blaze.rust.channel, 'install', '--force', '--path', '{{ project.root }}'],
+            arguments: [
+              'install', 
+              '--force', 
+              '--path', 
+              blaze.project.root
+            ],
             environment: LocalEnv(targets.release),
           },
         ],
@@ -115,11 +111,14 @@ local cargoTargets = cargo.all({
         'source',
       ],
     },
-    'publish-crate': {
-      executor: executors.cargoPublish(),
+    publish: {
+      executor: {
+        url: 'https://github.com/rnza0u/blaze-executors.git',
+        path: 'cargo-publish',
+        format: 'Git'
+      },
       options: {
-        dryRun: blaze.vars.blaze.publish.dryRun,
-        channel: blaze.vars.blaze.rust.channel,
+        dryRun: blaze.vars.publish.dryRun
       },
       dependencies: [
         'check-version',
@@ -130,27 +129,87 @@ local cargoTargets = cargo.all({
       ],
     },
     'push-tags': {
-      executor: executors.pushTags(),
+      executor: {
+        url: 'https://github.com/rnza0u/blaze-executors.git',
+        path: 'push-tags',
+        format: 'Git'
+      },
       options: {
-        dryRun: blaze.vars.blaze.publish.dryRun,
-        tags: ['blaze-' + blaze.vars.blaze.publish.version],
+        dryRun: blaze.vars.publish.dryRun,
+        tags: [blaze.vars.publish.version],
       },
     },
     'check-version': {
-      executor: executors.cargoVersionCheck(),
+      executor: {
+        url: 'https://github.com/rnza0u/blaze-executors.git',
+        path: 'cargo-version-check',
+        format: 'Git'
+      },
       options: {
-        version: blaze.vars.blaze.publish.version,
+        version: blaze.vars.publish.version,
         workspaceDependencies: workspaceDependencies,
       },
     },
-    'deploy-all': {
+    source: {
+      cache: {
+        invalidateWhen: {
+          inputChanges: [
+            'src/**',
+            'Cargo.toml',
+            'Cargo.lock'
+          ]
+        }
+      },
+      dependencies: [name + ':source' for name in workspaceDependencies]
+    },
+    lint: {
+      executor: 'std:commands',
+      options: {
+        commands: (if blaze.vars.lint.fix then [
+            {
+                program: 'cargo',
+                arguments: ['fmt'],
+                environment: LocalEnv(targets.dev)
+            }
+        ] else []) + [
+            {
+                program: 'cargo',
+                arguments: ['check'],
+                environment: LocalEnv(targets.dev)
+            },
+            {
+                program: 'cargo',
+                arguments: ['clippy'],
+                environment: LocalEnv(targets.dev)
+            }
+        ]
+      },
+      dependencies: ['source']
+    },
+    clean: {
+      executor: 'std:commands',
+      options: {
+        commands: [
+          {
+            program: 'cargo',
+            arguments: ['clean']
+          }
+        ] + [
+          {  
+            program: 'cargo',
+            arguments: ['clean'],
+            environment: {
+              CARGO_TARGET_DIR: blaze.project.root + '/' + targets[name].targetDir,
+            }
+          } for name in finalTargets
+        ]
+      }
+    },
+    deploy: {
       dependencies: ['deploy-' + name for name in finalTargets],
     },
-    ci: {
-      dependencies: ['lint', 'check'],
-    },
-    publish: {
-      dependencies: ['publish-crate', 'push-tags'],
-    },
+    'build-all': {
+      dependencies: ['build-' + name for name in finalTargets]
+    }
   },
 }

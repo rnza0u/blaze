@@ -1,15 +1,13 @@
 local blaze = std.extVar('blaze');
 local targets = import '../targets.jsonnet';
-local cargo = (import 'cargo.libsonnet')(blaze.vars.blaze.rust.channel, ['-Z', 'bindeps']);
-local executors = import 'executors.libsonnet';
 local LocalEnv = import './local-env.jsonnet';
 
 local cargoDependencies = [
-  { project: 'blaze-common', crate: 'blaze-common' },
+  'blaze-common'
 ];
 
 local cargoBuildDependencies = [
-  { project: 'blaze-rust-bridge', crate: 'blaze-rust-bridge' },
+  'blaze-rust-bridge'
 ];
 
 local npmDependencies = [
@@ -17,15 +15,48 @@ local npmDependencies = [
   'blaze-schemas',
 ];
 
-local cargoTargets = cargo.all({
-  workspaceDependencies: [dep.project for dep in cargoDependencies + cargoBuildDependencies],
-  environment: LocalEnv(targets.dev)
-});
-
 {
-  targets: cargoTargets + {
-    source: cargoTargets.source + {
-      dependencies: cargoTargets.source.dependencies + [
+  targets: {
+    lint: {
+      executor: 'std:commands',
+      options: {
+        commands: (if blaze.vars.lint.fix then [
+            {
+                program: 'cargo',
+                arguments: ['fmt'],
+                environment: LocalEnv(targets.dev)
+            }
+        ] else []) + [
+            {
+                program: 'cargo',
+                arguments: ['check'],
+                environment: LocalEnv(targets.dev)
+            },
+            {
+                program: 'cargo',
+                arguments: ['clippy'],
+                environment: LocalEnv(targets.dev)
+            }
+        ]
+      },
+      dependencies: ['source']
+    },
+    source: {
+      cache: {
+        invalidateWhen: {
+          inputChanges: [
+            'src/**',
+            'Cargo.toml',
+            'Cargo.lock',
+            'build.rs'
+          ]
+        }
+      },
+      dependencies: [
+        {
+          projects: cargoDependencies + cargoBuildDependencies,
+          target: 'source'
+        },
         {
           projects: npmDependencies,
           target: 'build',
@@ -33,29 +64,44 @@ local cargoTargets = cargo.all({
       ]
     },
     publish: {
-      executor: executors.cargoPublish(),
+      executor: {
+        url: 'https://github.com/rnza0u/blaze-executors.git',
+        path: 'cargo-publish',
+        format: 'Git'
+      },
       options: {
-        dryRun: blaze.vars.blaze.publish.dryRun,
-        channel: blaze.vars.blaze.rust.channel
+        dryRun: blaze.vars.publish.dryRun
       },
       dependencies: [
         'check-version',
         {
-          projects: [dep for dep in [cargoDep.project for cargoDep in cargoDependencies + cargoBuildDependencies] + npmDependencies],
+          projects: cargoDependencies + cargoBuildDependencies + npmDependencies,
           target: 'publish'
         }
       ]
     },
     'check-version': {
-      executor: executors.cargoVersionCheck(),
+      executor: {
+        url: 'https://github.com/rnza0u/blaze-executors.git',
+        path: 'cargo-version-check',
+        format: 'Git'
+      },
       options: {
-        version: blaze.vars.blaze.publish.version,
-        workspaceDependencies: [dep.project for dep in cargoDependencies],
-        workspaceBuildDependencies: [dep.project for dep in cargoBuildDependencies]
+        version: blaze.vars.publish.version,
+        workspaceDependencies: cargoDependencies,
+        workspaceBuildDependencies: cargoBuildDependencies
       }
     },
-    ci: {
-      dependencies: ['lint', 'check']
+    clean: {
+      executor: 'std:commands',
+      options: {
+        commands: [
+          {
+            program: 'cargo',
+            arguments: ['clean']
+          }
+        ]
+      }
     }
   },
 }

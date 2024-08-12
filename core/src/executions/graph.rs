@@ -71,7 +71,7 @@ impl<T> ExecutedNode<T> {
 struct DependenciesResolution {
     selection: Option<Selection>,
     target: String,
-    ancestor: Option<(String, DependencyAccessor)>,
+    ancestors: Vec<(String, DependencyAccessor)>,
     depth: usize,
 }
 
@@ -169,14 +169,14 @@ impl ExecutionGraph {
         let mut resolutions = VecDeque::from([DependenciesResolution {
             selection: Some(selection.clone()),
             target: target.to_owned(),
-            ancestor: None,
+            ancestors: vec![],
             depth: 0,
         }]);
 
         while let Some(DependenciesResolution {
             selection,
             target,
-            ancestor,
+            ancestors,
             depth,
         }) = resolutions.pop_front()
         {
@@ -213,7 +213,7 @@ impl ExecutionGraph {
                     }
                     refs.keys().map(|name| name.as_str()).collect::<Vec<_>>()
                 }
-                None => vec![ancestor.as_ref().unwrap().1.src_project.name()],
+                None => vec![ancestors.last().unwrap().1.src_project.name()],
             };
 
             for project_name in project_names {
@@ -221,7 +221,23 @@ impl ExecutionGraph {
                 if let Some(target_execution) = TargetExecution::try_new(project.clone(), &target) {
                     let double = target_execution.get_double();
 
-                    if let Some((ancestor_double, dependency_accessor)) = ancestor.to_owned() {
+                    if let Some(circular_ancestor_index) = ancestors
+                        .iter()
+                        .position(|(ancestor, _)| &double == ancestor)
+                    {
+                        let mut chain = ancestors[circular_ancestor_index..]
+                            .iter()
+                            .map(|(double, _)| double.as_str())
+                            .collect::<Vec<_>>();
+                        chain.push(double.as_str());
+                        bail!(
+                            "circular dependency detected ({})",
+                            chain.join(" <=> ")
+                        )
+                    }
+
+                    if let Some((ancestor_double, dependency_accessor)) = ancestors.last().cloned()
+                    {
                         dependency_graph
                             .get_mut(&ancestor_double)
                             .unwrap()
@@ -231,7 +247,7 @@ impl ExecutionGraph {
 
                     if dependency_graph.contains_key(&double) {
                         continue;
-                    }
+                    }   
 
                     let target_execution = Arc::new(target_execution);
 
@@ -254,27 +270,28 @@ impl ExecutionGraph {
                         .iter()
                         .enumerate()
                     {
+                        let mut next_ancestors = ancestors.clone();
+                        next_ancestors.push((
+                            double.to_owned(),
+                            DependencyAccessor {
+                                src_target: target_execution.get_target_name().to_owned(),
+                                src_project: project.clone(),
+                                dependency_index: i,
+                            },
+                        ));
+                        
                         resolutions.push_back(DependenciesResolution {
                             selection: dependency.projects().cloned().map(|selector| {
                                 Selection::from_source(SelectorSource::Provided(selector))
                             }),
                             target: dependency.target().to_owned(),
-                            ancestor: Some((
-                                double.to_owned(),
-                                DependencyAccessor {
-                                    src_target: target_execution.get_target_name().to_owned(),
-                                    src_project: project.clone(),
-                                    dependency_index: i,
-                                },
-                            )),
+                            ancestors: next_ancestors,
                             depth: depth + 1,
                         })
                     }
                 }
             }
         }
-
-        check_for_circular_dependencies(&dependency_graph)?;
 
         Ok(Self { dependency_graph })
     }
@@ -536,59 +553,6 @@ impl<T> ExecutedGraph<T> {
 
         Ok(())
     }
-}
-
-// in order to check for circular dependencies, we try to make a topological sort.
-// if we cannot continue to sort and the graph is not yet sorted, then it means it is circular.
-fn check_for_circular_dependencies(dependency_graph: &DependencyGraph) -> Result<()> {
-    let mut graph = dependency_graph
-        .iter()
-        .map(|(double, node)| (double, node.dependencies.keys().collect::<HashSet<_>>()))
-        .collect::<BTreeMap<_, _>>();
-
-    loop {
-        if graph.is_empty() {
-            return Ok(());
-        }
-
-        let next_nodes = graph
-            .iter()
-            .filter(|(_, dependencies)| dependencies.is_empty())
-            .map(|(double, _)| (*double).to_owned())
-            .collect::<Vec<_>>();
-
-        if next_nodes.is_empty() {
-            let circular_nodes = find_circular_nodes(&graph).unwrap();
-            bail!(
-                "circular dependency detected ({} <===> {})",
-                circular_nodes.0,
-                circular_nodes.1
-            );
-        }
-
-        graph.retain(|double, _| !next_nodes.contains(double));
-
-        graph.values_mut().for_each(|dependencies| {
-            dependencies.retain(|dependency| !next_nodes.contains(dependency));
-        })
-    }
-}
-
-fn find_circular_nodes<'a>(
-    graph: &BTreeMap<&'a String, HashSet<&'a String>>,
-) -> Option<(&'a String, &'a String)> {
-    for (target, dependencies) in graph {
-        let mut next_dependencies = dependencies.iter().collect::<Vec<_>>();
-
-        while let Some(dependency) = next_dependencies.pop() {
-            let dependency_node = &graph[dependency];
-            if dependency_node.contains(target) {
-                return Some((target, dependency));
-            }
-            next_dependencies.extend(dependency_node);
-        }
-    }
-    None
 }
 
 /// Optimize the whole graph so that we remove redondant relations between nodes.

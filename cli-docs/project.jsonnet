@@ -1,15 +1,67 @@
 local blaze = std.extVar('blaze');
 local targets = import '../targets.jsonnet';
 local LocalEnv = import '../core/local-env.jsonnet';
-local cargo = (import 'cargo.libsonnet')(blaze.vars.blaze.rust.channel, ['-Z', 'bindeps']);
-
-local cargoTargets = cargo.all({
-    workspaceDependencies: ['blaze-cli'],
-    environment: LocalEnv(targets.dev)
-});
+local workspaceDependencies = ['blaze-cli'];
 
 {
-    targets: cargoTargets + {
+    targets: {
+        source: {
+            cache: {
+                invalidateWhen: {
+                    inputChanges: [
+                        'src/**',
+                        'Cargo.toml',
+                        'Cargo.lock'
+                    ]
+                }
+            },
+            dependencies: [
+                {
+                    projects: workspaceDependencies,
+                    target: 'source'
+                }
+            ]
+        },
+        clean: {
+            executor: 'std:commands',
+            options: {
+                commands: [
+                    {
+                        program: 'cargo',
+                        arguments: ['clean']
+                    }
+                ]
+            }
+        },
+        lint: {
+            executor: 'std:commands',
+            options: {
+                commands: (if blaze.vars.lint.fix then [
+                    {
+                        program: 'cargo',
+                        arguments: ['fmt'],
+                        environment: LocalEnv(targets.dev)
+                    }
+                ] else []) + [
+                    {
+                        program: 'cargo',
+                        arguments: ['check'],
+                        environment: LocalEnv(targets.dev)
+                    },
+                    {
+                        program: 'cargo',
+                        arguments: ['clippy'],
+                        environment: LocalEnv(targets.dev)
+                    }
+                ]
+            },
+            dependencies: [
+                {
+                    projects: workspaceDependencies,
+                    target: 'source'
+                }
+            ]
+        },
         build: {
             executor: 'std:commands',
             description: 'Build the documentation files.',
@@ -17,7 +69,10 @@ local cargoTargets = cargo.all({
                 commands: [
                     {
                         program: 'cargo',
-                        arguments: ['+' + blaze.vars.blaze.rust.channel, 'run', '-Z', 'bindeps', '--release'],
+                        arguments: [
+                            'run', 
+                            '--release'
+                        ],
                         environment: LocalEnv(targets.release) + {
                             OUT_DIR: '{{ project.root }}/dist'
                         }
@@ -32,9 +87,6 @@ local cargoTargets = cargo.all({
             dependencies: [
                 'source'
             ]
-        },
-        ci: {
-            dependencies: ['lint', 'check']
         }
     }
 }

@@ -1,85 +1,126 @@
 local blaze = std.extVar('blaze');
 local LocalEnv = import '../core/local-env.jsonnet';
 local targets = import '../targets.jsonnet';
-local cargo = (import 'cargo.libsonnet')(blaze.vars.blaze.rust.channel, ['-Z', 'bindeps']);
-local executors = import 'executors.libsonnet';
+local finalTargets = std.filter(function(name) targets[name].rustTriple != null, std.objectFields(targets));
 
 local workspaceDependencies = ['blaze-core'];
 
-local cargoTargets = cargo.all({
-    workspaceDependencies: workspaceDependencies
-});
+local testTargets = {
+    ['run-' + name]: {
+        executor: 'std:commands',
+        cache: {
+            invalidateWhen: {
+                inputChanges: [
+                    {
+                        pattern: 'tests/**',
+                        exclude: ['**/node_modules', '**/target']
+                    }
+                ]
+            }
+        },
+        options: {
+            commands: [
+                {
+                    local useCross = targets[name].rustTriple != null,
+                    program: if useCross then 'cross' else 'cargo',
+                    arguments: [
+                        '+nightly',
+                        'test', 
+                        '--no-fail-fast'
+                    ] + (if blaze.vars.tests != null 
+                        then std.foldl(
+                            function(testArgs, test) testArgs + ['--test', test], 
+                            blaze.vars.tests, 
+                            []
+                        ) 
+                        else []
+                    )
+                    + (if targets[name].rustTriple != null then ['--target',  targets[name].rustTriple] else [])
+                    + (if targets[name].release then ['--release'] else [])
+                    + ['--', '--nocapture'],
+                    environment: LocalEnv(targets[name])
+                    + (if useCross then { 
+                        BLAZE_ROOT: blaze.root + '/blaze',
+                        CROSS_CONFIG: blaze.root + '/blaze/Cross.toml' 
+                    } else {})
+                },
+            ]
+        },
+        dependencies: [
+            'source'
+        ]
+    } for name in std.objectFields(targets)
+};
 
 {
-    targets: cargoTargets + {
-        ['test-' + name]: {
-            executor: 'std:commands',
-            cache: {
-                invalidateWhen: {
-                    inputChanges: [
-                        {
-                            pattern: 'tests/**',
-                            exclude: ['**/node_modules', '**/target']
-                        }
-                    ]
-                }
-            },
-            options: {
-                commands: [
-                    {
-                        local useCross = targets[name].rustTriple != null,
-                        program: if useCross then 'cross' else 'cargo',
-                        arguments: [
-                            '+nightly',
-                            'test', 
-                            '--no-fail-fast'
-                        ] + (if blaze.vars.blaze.tests != null 
-                            then std.foldl(
-                                function(testArgs, test) testArgs + ['--test', test], 
-                                blaze.vars.blaze.tests, 
-                                []
-                            ) 
-                            else []
-                        )
-                        + (if targets[name].rustTriple != null then ['--target',  targets[name].rustTriple] else [])
-                        + (if targets[name].release then ['--release'] else [])
-                        + ['--', '--nocapture'],
-                        environment: LocalEnv(targets[name])
-                        + (if useCross then { 
-                            BLAZE_ROOT: blaze.root + '/blaze',
-                            CROSS_CONFIG: blaze.root + '/blaze/Cross.toml' 
-                        } else {})
-                    },
-                ]
-            },
+    targets: testTargets + {
+        source: {
+            cache: {},
             dependencies: [
-                'source'
+                {
+                    projects: workspaceDependencies,
+                    target: 'source'
+                }
             ]
-        } for name in std.objectFields(targets)
-    } + {
+        },
         publish: {
-            executor: executors.cargoPublish(),
+            executor: {
+                url: 'https://github.com/rnza0u/blaze-executors.git',
+                path: 'cargo-publish',
+                format: 'Git'
+            },
             options: {
-                dryRun: blaze.vars.blaze.publish.dryRun,
+                dryRun: blaze.vars.publish.dryRun,
                 channel: 'nightly'
             },
             dependencies: [
                 'check-version',
-            ] + [dep + ':publish' for dep in workspaceDependencies]
+                {
+                    projects: workspaceDependencies,
+                    target: 'publish'
+                }
+            ]
         },
         'check-version': {
-            executor: executors.cargoVersionCheck(),
+            executor: {
+                url: 'https://github.com/rnza0u/blaze-executors.git',
+                path: 'cargo-version-check',
+                format: 'Git'
+            },
             options: {
-                version: blaze.vars.blaze.publish.version,
+                version: blaze.vars.publish.version,
                 workspaceDevDependencies: workspaceDependencies
             }
         },
-        test: {
+        run: {
             cache: {},
-            dependencies: ['test-dev']
+            dependencies: ['run-dev']
         },
-        check: cargo.check(),
-        lint: cargo.lint(),
+        'run-all': {
+            cache: {},
+            dependencies: ['run-' + target for target in finalTargets]
+        },
+        lint: {
+            executor: 'std:commands',
+            options: {
+                commands: (if blaze.vars.lint.fix then [
+                    {
+                        program: 'cargo',
+                        arguments: ['fmt']
+                    }
+                ] else []) + [
+                    {
+                        program: 'cargo',
+                        arguments: ['check']
+                    },
+                    {
+                        program: 'cargo',
+                        arguments: ['clippy', '--no-deps'] + (if blaze.vars.lint.fix then ['--fix'] else [])
+                    }
+                ]
+            },
+            dependencies: ['source']
+        },
         'clean-fixtures': {
             executor: 'std:commands',
             options: {
@@ -88,16 +129,30 @@ local cargoTargets = cargo.all({
                         program: 'rm',
                         arguments: [
                             '-rf',
-                            'tests/fixtures/executors/node-checker/dist',
-                            'tests/fixtures/executors/node-checker/node_modules',
-                            'tests/fixtures/executors/rust-dummy/target',
-                            'tests/fixtures/executors/rust-checker/target'
-                        ]
+                            'dist',
+                            'node_modules',
+                        ],
+                        cwd: blaze.project.root + '/tests/fixtures/executors/node-checker'
+                    },
+                    {
+                        program: 'cargo',
+                        arguments: ['clean'],
+                        cwd: blaze.project.root + '/tests/fixtures/executors/rust-checker'
                     }
                 ]
             }
         },
-        'clean-cargo': cargoTargets.clean,
+        'clean-cargo': {
+            executor: 'std:commands',
+            options: {
+                commands: [
+                    {
+                        program: 'cargo',
+                        arguments: ['clean']
+                    }
+                ]
+            }
+        },
         clean: {
             dependencies: [
                 'clean-cargo',

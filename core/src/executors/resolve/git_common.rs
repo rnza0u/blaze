@@ -119,22 +119,24 @@ impl ExecutorResolver for GitHeadlessResolver<'_> {
             repository.checkout_head(Some(&mut CheckoutBuilder::default().force()))?;
         }
 
+        
         let state = State {
             repository_path: repository_path.to_owned(),
         };
-
+        let src_path = if let Some(path) = &self.git_options.path() {
+            repository_path.join(path)
+        } else {
+            repository_path
+        };
+        
         Ok(ExecutorSource {
             load_metadata: LoadMetadata {
                 kind: self
                     .git_options
                     .kind()
                     .map(Ok::<_, Error>)
-                    .unwrap_or_else(|| infer_local_executor_type(&repository_path))?,
-                src: if let Some(path) = &self.git_options.path() {
-                    repository_path.join(path)
-                } else {
-                    repository_path
-                },
+                    .unwrap_or_else(|| infer_local_executor_type(&src_path))?,
+                src: src_path,
             },
             state: to_value(state)?,
         })

@@ -2,8 +2,8 @@
   "name": "@blaze-repo/node-bridge",
   "homepage": "https://blaze-monorepo.dev",
   "repository": {
-    "url": "git+https://github.com/rnza0u/main.git",
-    "directory": "blaze/node/bridge"
+    "url": "git+https://github.com/rnza0u/blaze.git",
+    "directory": "node/bridge"
   },
   "version": "0.2.11",
   "description": "A bridge between Blaze and Node.js executors.",
@@ -21,6 +21,9 @@
   "devDependencies": {
     "@types/node": "^20.8.3",
     "esbuild": "0.21.5",
+    "eslint": "^9.9.0",
+    "eslint-config-rnz-main": "^1.0.4",
+    "eslint-config-rnz-node": "^1.0.3",
     "typescript": "^5.5.2"
   }
 }

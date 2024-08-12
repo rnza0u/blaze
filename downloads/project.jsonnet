@@ -1,10 +1,28 @@
-local cargo = (import 'cargo.libsonnet')();
-local docker = import 'docker.libsonnet';
-
-local cargoTargets = cargo.all();
+local image = 'registry.rnzaou.me/blaze-downloads';
+local blaze = std.extVar('blaze');
 
 {
-    targets: cargoTargets + {
+    targets: {
+        lint: {
+            executor: 'std:commands',
+            options: {
+                commands: (if blaze.vars.lint.fix then [
+                    {
+                        program: 'cargo',
+                        arguments: ['fmt']
+                    }
+                ] else []) + [
+                    {
+                        program: 'cargo',
+                        arguments: ['check']
+                    },
+                    {
+                        program: 'cargo',
+                        arguments: ['clippy']
+                    }
+                ]
+            }
+        },
         serve: {
             executor: 'std:commands',
             options: {
@@ -40,18 +58,67 @@ local cargoTargets = cargo.all();
             },
             dependencies: ['source']
         },
-        'build-image': docker.build('blaze-downloads') + {
+        'build-image': {
+            executor: 'std:commands',
+            options: {
+                commands: [
+                    {
+                        program: 'docker',
+                        arguments: [
+                            'build',
+                            '-t',
+                            image,
+                            '.'
+                        ]
+                    }
+                ]
+            },
             dependencies: ['build-bin']
         },
-        'push-image': docker.push('blaze-downloads') + {
+        publish: {
+            executor: 'std:commands',
+            options: {
+                commands: [
+                    {
+                        program: 'docker',
+                        arguments: [
+                            'push',
+                            image
+                        ]
+                    }
+                ]
+            },
             dependencies: ['build-image']
         },
-        deploy: docker.composeUp(),
-        publish: {
-            dependencies: ['push-image']
+        deploy: {
+            executor: 'std:commands',
+            options: {
+                commands: [
+                    {
+                        program: 'docker',
+                        arguments: [
+                            'compose',
+                            'up',
+                            '--remove-orphans',
+                            '--pull',
+                            'always',
+                            '--force-recreate',
+                            '--detach'
+                        ]
+                    }
+                ]
+            }
         },
-        ci: {
-            dependencies: ['check', 'lint']
+        clean: {
+            executor: 'std:commands',
+            options: {
+                commands: [
+                    {
+                        program: 'cargo',
+                        arguments: ['clean']
+                    }
+                ]
+            }
         }
     }
 }

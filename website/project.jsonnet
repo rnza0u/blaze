@@ -1,24 +1,53 @@
 local docusaurus = 'node_modules/.bin/docusaurus';
-local docker = import 'docker.libsonnet';
-local npm = import 'npm.libsonnet';
+local image = 'registry.rnzaou.me/blaze-website';
 local env = {
     'ASSETS_LOCATION': '{{ workspace.root }}/{{ workspace.projects.blaze-assets.path }}',
     'PROJECT_ROOT': '{{ project.root }}'
 };
+local blaze = std.extVar('blaze');
 
 {
     targets: {
-        install: npm.install(),
-        build: {
+        install: {
             executor: 'std:commands',
+            cache: {
+                invalidateWhen: {
+                    inputChanges: ['package.json'],
+                    outputChanges: ['package-lock.json'],
+                    filesMissing: ['node_modules']
+                }
+            },
+            options: {
+                commands: [
+                    {
+                        program: 'npm',
+                        arguments: ['install']
+                    }
+                ]
+            }
+        },
+        source: {
             cache: {
                 invalidateWhen: {
                     inputChanges: [
                         'src/**',
                         'docs/**',
-                        '*.js',
+                        'static/**',
                         'tsconfig.json',
-                    ],
+                        '*.js'
+                    ]
+                }
+            },
+            dependencies: [
+                'install',
+                'move-json-schemas',
+                'move-cli-docs'
+            ]
+        },
+        build: {
+            executor: 'std:commands',
+            cache: {
+                invalidateWhen: {
                     outputChanges: [
                         'build/**'
                     ]
@@ -34,12 +63,23 @@ local env = {
                 ]
             },
             dependencies: [
-                'install',
-                'move-cli-docs',
-                'move-json-schemas'
+                'source'
             ]
         },
-        lint: npm.lint(),
+        lint: {
+            executor: 'std:commands',
+            options: {
+                commands: [
+                    {
+                        program: './node_modules/.bin/eslint',
+                        arguments: (if blaze.vars.lint.fix then ['--fix'] else []) + [
+                            blaze.project.root
+                        ]
+                    }
+                ]
+            },
+            dependencies: ['source']
+        },
         serve: {
             executor: 'std:commands',
             options: {
@@ -52,9 +92,7 @@ local env = {
                 ]
             },
             dependencies: [
-                'install',
-                'move-cli-docs',
-                'move-json-schemas'
+                'source'
             ]
         },
         'move-json-schemas': {
@@ -62,7 +100,7 @@ local env = {
             cache: {
                 invalidateWhen: {
                     outputChanges: [
-                        'docs/configuration/**/*-schema.json'
+                        'static/schemas/**'
                     ]
                 }
             },
@@ -86,10 +124,7 @@ local env = {
                 ]
             },
             dependencies: [
-                {
-                    projects: ['blaze-schemas'],
-                    target: 'build'
-                }
+                'blaze-schemas:build'
             ]
         },
         'move-cli-docs': {
@@ -125,27 +160,83 @@ local env = {
                 'blaze-cli-docs:build'
             ],
         },
-        clean: npm.clean({
-            unlinkPackage: '@blaze-repo/website', 
-            extraDirectories: ['docs/cli', 'build', '.docusaurus']
-        }),
-        'build-image': docker.build('blaze-website', 'registry.rnzaou.me', ['conf/**']) + {
+        clean: {
+            executor: 'std:commands',
+            options: {
+                commands: [
+                    {
+                        program: 'rm',
+                        arguments: [
+                            '-rf',
+                            'build',
+                            '.docusaurus',
+                            'docs/cli',
+                            'static/schemas',
+                            'node_modules'
+                        ]
+                    }
+                ]
+            }
+        },
+        'build-image': {
+            executor: 'std:commands',
+            cache: {
+                invalidateWhen: {
+                    inputChanges: [
+                        'Dockerfile',
+                        'conf/**'
+                    ]
+                }
+            },
+            options: {
+                commands: [
+                    {
+                        program: 'docker',
+                        arguments: [
+                            'build', 
+                            '-t', 
+                            image, 
+                            '.'
+                        ]
+                    }
+
+                ]
+            },
             dependencies: ['build']
         },
-        'push-image': docker.push('blaze-website') + {
-            dependencies: ['build-image', 'docker-registry:authenticate']
-        },
         publish: {
-            dependencies: [
-                'push-image'
-            ]
+            executor: 'std:commands',
+            options: {
+                commands: [
+                    {
+                        program: 'docker',
+                        arguments: [
+                            'push', 
+                            image
+                        ]
+                    }
+                ]
+            },
+            dependencies: ['build-image']
         },
-        deploy: docker.composeUp(),
-        ci: {
-            dependencies: [
-                'build-image',
-                'lint'
-            ]
+        deploy: {
+            executor: 'std:commands',
+            options: {
+                commands: [
+                    {
+                        program: 'docker',
+                        arguments: [
+                            'compose',
+                            'up',
+                            '--detach',
+                            '--remove-orphans',
+                            '--pull',
+                            'always',
+                            '--force-recreate'
+                        ]
+                    }
+                ]
+            }
         }
     }
 }

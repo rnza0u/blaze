@@ -94,7 +94,7 @@ blaze version
   () => <WithLatestVersion>{
       version => <>
         <p>
-          You can install your own binary <a target="_blank" href={`https://github.com/rnza0u/main/tree/blaze-${version}`}>from the source code</a> using different methods.
+          You can install your own binary <a target="_blank" href={`https://github.com/rnza0u/blaze.git`}>from the source code</a> using different methods.
         </p>
         
         <p>You will need a Rust nightly toolchain (&gt;=2024-06-25). You can download it using <a href="https://rustup.rs"><code>rustup</code></a> :</p>
@@ -134,7 +134,7 @@ blaze version
         <CodeBlock language='sh'> 
           {
             [
-              `git clone --depth 1 --branch blaze-${version} https://github.com/rnza0u/main.git`,
+              `git clone --depth 1 --branch blaze-${version} https://github.com/rnza0u/blaze.git`,
               './main/blaze/bootstrap.sh'
             ].join('\n')
           }

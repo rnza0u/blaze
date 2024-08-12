@@ -1,26 +1,69 @@
-local cargo = (import 'cargo.libsonnet')();
-local executors = import 'executors.libsonnet';
 local blaze = std.extVar('blaze');
 
-local cargoTargets = cargo.all();
-
 {
-    targets: cargoTargets + {
-        publish: {
-            executor: executors.cargoPublish(),
+    targets: {
+        source: {
+            cache: {
+                invalidateWhen: {
+                    inputChanges: [
+                        'src/**',
+                        'Cargo.toml',
+                        'Cargo.lock'
+                    ]
+                }
+            }
+        },
+        lint: {
+            executor: 'std:commands',
             options: {
-                dryRun: blaze.vars.blaze.publish.dryRun
+                commands: (if blaze.vars.lint.fix then [
+                    {
+                        program: 'cargo',
+                        arguments: ['fmt']
+                    }
+                ] else []) + [
+                    {
+                        program: 'cargo',
+                        arguments: ['clippy']
+                    },
+                    {
+                        program: 'cargo',
+                        arguments: ['check']
+                    }
+                ]
+            }
+        },
+        publish: {
+            executor: {
+                url: 'https://github.com/rnza0u/blaze-executors.git',
+                path: 'cargo-publish',
+                format: 'Git'
+            },
+            options: {
+                dryRun: blaze.vars.publish.dryRun
             },
             dependencies: ['check-version']
         },
         'check-version': {
-            executor: executors.cargoVersionCheck(),
+            executor: {
+                url: 'https://github.com/rnza0u/blaze-executors.git',
+                path: 'cargo-version-check',
+                format: 'Git'
+            },
             options: {
-                version: blaze.vars.blaze.publish.version
+                version: blaze.vars.publish.version
             }
         },
-        ci: {
-            dependencies: ['lint', 'check']
+        clean: {
+            executor: 'std:commands',
+            options: {
+                commands: [
+                    {
+                        program: 'cargo',
+                        arguments: ['clean']
+                    }
+                ]
+            }
         }
     }
 }

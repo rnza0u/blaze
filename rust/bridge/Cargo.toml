@@ -1,7 +1,7 @@
 [package]
 name = "blaze-rust-bridge"
 description = "A sidecar program that serves as a bridge between Blaze CLI and Rust custom executors."
-repository = "https://github.com/rnza0u/main.git"
+repository = "https://github.com/rnza0u/blaze.git"
 homepage = "https://blaze-monorepo.dev"
 license = "MIT"
 version = "0.2.11"

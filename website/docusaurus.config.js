@@ -100,7 +100,7 @@ const config = {
                     to: 'downloads'
                 },
                 {
-                    href: 'https://github.com/rnza0u/main/tree/master/blaze',
+                    href: 'https://github.com/rnza0u/blaze.git',
                     label: 'GitHub',
                     position: 'right',
                 },

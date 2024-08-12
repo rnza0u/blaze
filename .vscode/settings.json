@@ -1,0 +1,13 @@
+{
+    "rust-analyzer.linkedProjects": [
+        "core/Cargo.toml",
+        "tests/Cargo.toml",
+        "tests/tests/fixtures/executors/rust-checker/Cargo.toml",
+        "cli/Cargo.toml",
+        "common/Cargo.toml",
+        "rust/bridge/Cargo.toml",
+        "rust/devkit/Cargo.toml",
+        "cli-docs/Cargo.toml",
+        "downloads/Cargo.toml"
+    ]
+}

@@ -1,6 +1,4 @@
-local cargo = (import 'cargo.libsonnet')();
 local targets = import '../../targets.jsonnet';
-local executors = import 'executors.libsonnet';
 local blaze = std.extVar('blaze');
 
 local workspaceDependencies = [
@@ -8,16 +6,55 @@ local workspaceDependencies = [
     { project: 'blaze-common', crate: 'blaze-common' }
 ];
 
-local cargoTargets = cargo.all({
-    workspaceDependencies: [dep.project for dep in workspaceDependencies]
-});
-
 {
-    targets: cargoTargets + {
-        publish: {
-            executor: executors.cargoPublish(),
+    targets: {
+        source: {
+            cache: {
+                invalidateWhen: {
+                    inputChanges: [
+                        'src/**', 
+                        'Cargo.toml', 
+                        'Cargo.lock'
+                    ]
+                }
+            },
+            dependencies: [
+                {
+                    projects: [dep.project for dep in workspaceDependencies],
+                    target: 'source'
+                }
+            ]
+        },
+        lint: {
+            executor: 'std:commands',
+            cache: {},
             options: {
-                dryRun: blaze.vars.blaze.publish.dryRun
+                commands: (if blaze.vars.lint.fix then [
+                    {
+                        program: 'cargo',
+                        arguments: ['fmt']
+                    }
+                ] else []) + [
+                    {
+                        program: 'cargo',
+                        arguments: ['check']
+                    },
+                    {
+                        program: 'cargo',
+                        arguments: ['clippy', '--no-deps'] + (if blaze.vars.lint.fix then ['--fix'] else [])
+                    }
+                ]
+            },
+            dependencies: ['source']
+        },
+        publish: {
+            executor: {
+                url: 'https://github.com/rnza0u/blaze-executors.git',
+                format: 'Git',
+                path: 'cargo-publish'
+            },
+            options: {
+                dryRun: blaze.vars.publish.dryRun
             },
             dependencies: [
                 'check-version',
@@ -28,14 +65,26 @@ local cargoTargets = cargo.all({
             ]
         },
         'check-version': {
-            executor: executors.cargoVersionCheck(),
+            executor: {
+                url: 'https://github.com/rnza0u/blaze-executors.git',
+                format: 'Git',
+                path: 'cargo-check-version'
+            },
             options: {
-                version: blaze.vars.blaze.publish.version,
+                version: blaze.vars.publish.version,
                 workspaceDependencies: [dep.crate for dep in workspaceDependencies]
             }
         },
-        ci: {
-            dependencies: ['check', 'lint']
+        clean: {
+            executor: 'std:commands',
+            options: {
+                commands: [
+                    {
+                        program: 'cargo',
+                        arguments: ['clean']
+                    }
+                ]
+            }
         }
     }
 }

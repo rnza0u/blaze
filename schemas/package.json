@@ -3,8 +3,8 @@
   "homepage": "https://blaze-monorepo.dev",
   "version": "0.2.11",
   "repository": {
-    "url": "git+https://github.com/rnza0u/main.git",
-    "directory": "blaze/schemas"
+    "url": "git+https://github.com/rnza0u/blaze.git",
+    "directory": "schemas"
   },
   "type": "module",
   "description": "Blaze configuration files JSON schemas.",
@@ -25,6 +25,9 @@
   "devDependencies": {
     "@types/json-schema": "^7.0.15",
     "@types/node": "^20.11.17",
+    "eslint": "^9.9.0",
+    "eslint-config-rnz-main": "^1.0.4",
+    "eslint-config-rnz-node": "^1.0.3",
     "typescript": "^5.5.2"
   },
   "dependencies": {

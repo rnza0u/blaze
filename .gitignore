@@ -1,0 +1,5 @@
+.blaze/*
+!.blaze/helpers
+!.blaze/.jpath
+!.blaze/variables.*
+.user.env

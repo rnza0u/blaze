@@ -1,18 +1,88 @@
-local npm = import 'npm.libsonnet';
-local executors = import 'executors.libsonnet';
 local blaze = std.extVar('blaze');
 
 {
-    targets: npm.all(
-        '@blaze-repo/node-bridge', 
-        {
-            workspaceDependencies: ['blaze-node-devkit']
-        }
-    ) + {
-        publish: {
-            executor: executors.npmPublish(),
+    targets: {
+        install: {
+            executor: 'std:commands',
             options: {
-                dryRun: blaze.vars.blaze.publish.dryRun
+                commands: [
+                    {
+                        program: 'npm',
+                        arguments: ['install']
+                    }
+                ]
+            },
+            cache: {
+                invalidateWhen: {
+                    inputChanges: ['package.json'],
+                    outputChanges: ['package-lock.json'],
+                    filesMissing: ['node_modules']
+                }
+            },
+            dependencies: ['blaze-node-devkit:link']
+        },
+        source: {
+            cache: {
+                invalidateWhen: {
+                    inputChanges: [
+                        'src/**', 
+                        'tsconfig.json'
+                    ]
+                }
+            },
+            dependencies: ['install']
+        },
+        lint: {
+            executor: 'std:commands',
+            options: {
+                commands: [
+                    {
+                        program: './node_modules/.bin/eslint',
+                        arguments: (if blaze.vars.lint.fix then ['--fix'] else [])
+                            + [blaze.project.root]
+                    }
+                ]
+            },
+            dependencies: [
+                'source'
+            ]
+        },
+        build: {
+            executor: 'std:commands',
+            options: {
+                commands: [
+                    {
+                        program: 'npm',
+                        arguments: ['run', 'build']
+                    }
+                ]
+            },
+            cache: {
+                invalidateWhen: {
+                    outputChanges: ['dist/**']
+                }
+            },
+            dependencies: ['source']
+        },
+        clean: {
+            executor: 'std:commands',
+            options: {
+                commands: [
+                    {
+                        program: 'rm',
+                        arguments: ['-rf', 'dist', 'node_modules']
+                    }
+                ]
+            }
+        },
+        publish: {
+            executor: {
+                url: 'https://github.com/rnza0u/blaze-executors.git',
+                format: 'Git',
+                path: 'npm-publish'
+            },
+            options: {
+                dryRun: blaze.vars.publish.dryRun
             },
             dependencies: [
                 'build',
@@ -21,16 +91,17 @@ local blaze = std.extVar('blaze');
             ]
         },
         'check-version': {
-            executor: executors.npmVersionCheck(),
+            executor: {
+                url: 'https://github.com/rnza0u/blaze-executors.git',
+                format: 'Git',
+                path: 'npm-check-version'
+            },
             options: {
-                version: blaze.vars.blaze.publish.version,
+                version: blaze.vars.publish.version,
                 workspaceDependencies: [
                     '@blaze-repo/node-devkit'
                 ]
             }
-        },
-        ci: {
-            dependencies: ['lint', 'build']
         }
     }
 }
