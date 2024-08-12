@@ -67,7 +67,7 @@ steps:
       exclude:
       - master
 trigger:
-  actions:
+  event:
   - push
 type: docker
 volumes:
@@ -128,7 +128,7 @@ steps:
   - name: docker-socket
     path: /var/run/docker.sock
 trigger:
-  actions:
+  event:
   - promote
 type: docker
 volumes:
@@ -143,6 +143,6 @@ volumes:
   name: docker-socket
 ---
 kind: signature
-hmac: f3cce5beed32b08ca33e0e9c3b6550da343e5e6d104ed851dd537c11d45880a7
+hmac: 311a4893c21761cbd2906e5709d0bc2db7349abd3d8de830502d698c5336d84d
 
 ...

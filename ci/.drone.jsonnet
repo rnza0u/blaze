@@ -114,7 +114,7 @@ local ci = {
     },
   ],
   trigger: {
-    actions: ['push']
+    event: ['push']
   },
   image_pull_secrets: ['DOCKER_REGISTRY_AUTHENTICATION_JSON'],
 };
@@ -193,7 +193,7 @@ local publish = {
         },
     ],
     trigger: {
-        actions: ['promote']
+        event: ['promote']
     },
     image_pull_secrets: ['DOCKER_REGISTRY_AUTHENTICATION_JSON'],
 };
