@@ -1,12 +1,11 @@
 use std::path::Path;
 
 use anyhow::Context;
-use blaze_common::{error::Result, value::Value};
+use blaze_common::{error::Result, value::{to_value, Value}};
 use serde::{Deserialize, Serialize};
 
 use crate::executors::{
-    loader::{CustomExecutorLoader, DynCustomExecutor, LoadContext},
-    Executor, ExecutorContext,
+    loader::{ExecutorLoader, ExecutorWithMetadata}, DynExecutor, Executor, ExecutorContext
 };
 
 use super::{
@@ -32,8 +31,8 @@ impl Executor for NodeExecutor {
 
 pub struct NodeExecutorLoader;
 
-impl CustomExecutorLoader for NodeExecutorLoader {
-    fn load_from_src(&self, root: &Path, _context: LoadContext<'_>) -> Result<DynCustomExecutor> {
+impl ExecutorLoader for NodeExecutorLoader {
+    fn load_from_src(&self, root: &Path) -> Result<ExecutorWithMetadata> {
         let package = NodeExecutorPackage::from_root(root).with_context(|| {
             format!(
                 "error while reading node executor metadata at {}",
@@ -41,14 +40,15 @@ impl CustomExecutorLoader for NodeExecutorLoader {
             )
         })?;
 
-        package
-            .build()
-            .with_context(|| format!("error while building node executor at {}", root.display()))?;
+        let executor = Box::new(NodeExecutor { package });
 
-        Ok(Box::new(NodeExecutor { package }))
+        Ok(ExecutorWithMetadata {
+            metadata: to_value(&executor)?,
+            executor,
+        })
     }
 
-    fn load_from_metadata(&self, metadata: &Value) -> Result<DynCustomExecutor> {
+    fn load_from_metadata(&self, metadata: &Value) -> Result<DynExecutor> {
         Ok(Box::new(NodeExecutor::deserialize(metadata)?))
     }
 }

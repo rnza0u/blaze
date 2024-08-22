@@ -4,42 +4,22 @@ use std::{
 };
 
 use blaze_common::{
-    error::Result,
-    executor::ExecutorKind,
-    value::{to_value, Value},
-    workspace::Workspace,
+    error::Result, executor::ExecutorKind, value::Value, workspace::Workspace
 };
-use serde::Serialize;
 
 use crate::executors::{
-    node::executor::NodeExecutorLoader, rust::RustExecutorLoader, DynExecutor, Executor,
+    node::prelude::NodeExecutorLoader, rust::RustExecutorLoader, DynExecutor
 };
 
-pub type DynCustomExecutor = Box<dyn CustomExecutor>;
-
-pub trait CustomExecutor: Executor + Send + Sync {
-    fn metadata(&self) -> Result<Value>;
-
-    fn to_dyn(self: Box<Self>) -> DynExecutor;
+pub struct ExecutorWithMetadata {
+    pub executor: DynExecutor,
+    pub metadata: Value
 }
 
-impl<T> CustomExecutor for T
-where
-    T: Executor + Send + Sync + UnwindSafe + RefUnwindSafe + Serialize + 'static,
-{
-    fn metadata(&self) -> Result<Value> {
-        Ok(to_value(self)?)
-    }
+pub trait ExecutorLoader {
+    fn load_from_src(&self, root: &Path) -> Result<ExecutorWithMetadata>;
 
-    fn to_dyn(self: Box<Self>) -> DynExecutor {
-        self
-    }
-}
-
-pub trait CustomExecutorLoader {
-    fn load_from_metadata(&self, metadata: &Value) -> Result<DynCustomExecutor>;
-
-    fn load_from_src(&self, root: &Path, context: LoadContext<'_>) -> Result<DynCustomExecutor>;
+    fn load_from_metadata(&self, metadata: &Value) -> Result<DynExecutor>;
 }
 
 #[derive(Clone, Copy)]
@@ -52,7 +32,7 @@ pub struct LoadMetadata {
     pub kind: ExecutorKind,
 }
 
-pub fn loader_for_executor_kind(kind: ExecutorKind) -> Box<dyn CustomExecutorLoader> {
+pub fn loader_for_executor_kind(kind: ExecutorKind) -> Box<dyn ExecutorLoader> {
     match kind {
         ExecutorKind::Node => Box::new(NodeExecutorLoader),
         ExecutorKind::Rust => Box::new(RustExecutorLoader),

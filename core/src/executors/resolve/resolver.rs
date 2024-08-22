@@ -9,9 +9,15 @@ use super::{
     CustomResolutionContext,
 };
 
-pub struct ExecutorSource {
-    pub load_metadata: LoadMetadata,
-    pub state: Value,
+pub struct ExecutorResolution {
+    pub executor: DynExecutor,
+    pub state: Value
+}
+
+pub struct ExecutorUpdate {
+    pub executor: DynExecutor,
+    pub new_state: Option<Value>,
+    pub updated: bool
 }
 
 pub struct ExecutorResolution {

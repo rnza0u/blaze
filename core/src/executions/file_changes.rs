@@ -125,7 +125,7 @@ impl CacheInvalidationCheck for InputFileChangesCheck<'_> {
 
         let merge_result = last_state.merge(current_matched_files)?;
 
-        let _ = self.computed_state.insert(merge_result.state);
+        let _ = self.computed_state.insert(merge_result.files_state);
 
         for change in &merge_result.changes {
             self.logger.debug(match change.change_type {

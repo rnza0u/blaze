@@ -226,7 +226,7 @@ pub struct MatchedFilesState(HashMap<MatchingBehavior, HashMap<PathBuf, Value>>)
 
 pub struct MergeResult {
     pub changes: Vec<FileChange>,
-    pub state: MatchedFilesState,
+    pub files_state: MatchedFilesState,
 }
 
 impl MatchedFilesState {
@@ -309,7 +309,7 @@ impl MatchedFilesState {
 
         Ok(MergeResult {
             changes,
-            state: Self(self.0),
+            files_state: Self(self.0),
         })
     }
 }
