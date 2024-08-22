@@ -22,7 +22,7 @@ use crate::{
 
 use super::{
     bridge::BridgeProcessParams,
-    loader::{CustomExecutorLoader, DynCustomExecutor, LoadContext},
+    loader::{ExecutorLoader, DynCustomExecutor, LoadContext},
     Executor, ExecutorContext,
 };
 
@@ -74,7 +74,7 @@ pub struct RustExecutor {
 
 pub struct RustExecutorLoader;
 
-impl CustomExecutorLoader for RustExecutorLoader {
+impl ExecutorLoader for RustExecutorLoader {
     fn load_from_metadata(&self, metadata: &Value) -> Result<DynCustomExecutor> {
         Ok(Box::new(RustExecutor::deserialize(metadata)?))
     }

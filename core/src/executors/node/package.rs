@@ -74,6 +74,7 @@ const PACKAGE_METADATA_INSTALL_KEY: &str = "blaze.install";
 const PACKAGE_METADATA_BUILD_KEY: &str = "blaze.build";
 
 const DEFAULT_BUILD_SCRIPT: &str = "build";
+const PACKAGE_SCRIPTS_KEY: &str = "scripts";
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct NodeExecutorPackage {
@@ -121,10 +122,28 @@ impl NodeExecutorPackage {
                 )
             })?;
 
+        let default_build_script_present = value
+            .at(PACKAGE_SCRIPTS_KEY)
+            .and_then(Value::as_object)
+            .map(|scripts| scripts.contains_key(DEFAULT_BUILD_SCRIPT))
+            .unwrap_or_default();
+
         let build = match value.at(PACKAGE_METADATA_BUILD_KEY){
             Some(Value::Bool(false)) => None,
             Some(Value::String(script)) => Some(script.to_owned()),
-            None |Some(Value::Bool(true)) => Some(DEFAULT_BUILD_SCRIPT.to_owned()),
+            Some(Value::Bool(true)) => {
+
+                if !default_build_script_present {
+                    bail!("default \"{DEFAULT_BUILD_SCRIPT}\" script is not present and {PACKAGE_METADATA_BUILD_KEY} is explicitely set to true")
+                }
+
+                Some(DEFAULT_BUILD_SCRIPT.to_owned())
+            },
+            None => if default_build_script_present {
+                Some(DEFAULT_BUILD_SCRIPT.to_owned())
+            } else {
+                None
+            },
             _ => bail!("invalid value in `{PACKAGE_METADATA_BUILD_KEY}`. must be either a boolean or a build script name.")
         };
 

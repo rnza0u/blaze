@@ -15,7 +15,7 @@ use url::Url;
 use crate::system::random::random_string;
 
 use super::{
-    kinds::infer_local_executor_type, loader::LoadMetadata, resolver::ExecutorSource,
+    kinds::infer_local_executor_type,
     ExecutorResolver,
 };
 

@@ -1,3 +1,4 @@
+pub mod builder;
 pub mod file_system;
 pub mod git;
 pub mod git_common;
@@ -58,21 +59,21 @@ pub struct CachedMetadata {
 }
 
 pub struct ResolvedExecutors {
-    executors: HashMap<u64, ExecutorResolution>,
+    executors: HashMap<u64, ResolvedExecutor>,
 }
 
 impl ResolvedExecutors {
-    pub fn get_for_reference(&self, reference: &ExecutorReference) -> Option<&ExecutorResolution> {
+    pub fn get_for_reference(&self, reference: &ExecutorReference) -> Option<&ResolvedExecutor> {
         self.executors.get(&get_executor_package_id(reference))
     }
 }
 
-pub enum ExecutorResolution {
+pub enum ResolvedExecutor {
     Standard(DynExecutor),
     Custom(CustomExecutorResolution),
 }
 
-impl ExecutorResolution {
+impl ResolvedExecutor {
     pub fn executor(&self) -> &DynExecutor {
         match self {
             Self::Standard(executor) => executor,
@@ -110,7 +111,7 @@ where
             }
         }
         let mut resolutions =
-            HashMap::<u64, ExecutorResolution>::with_capacity(references_by_package_id.len());
+            HashMap::<u64, ResolvedExecutor>::with_capacity(references_by_package_id.len());
         let mut references_drain = references_by_package_id.drain();
         let mut runner = ParallelRunner::new(
             scope,
@@ -131,7 +132,7 @@ where
                             ExecutorReference::Standard { url } => {
                                 return Ok((
                                     package_id,
-                                    ExecutorResolution::Standard(
+                                    ResolvedExecutor::Standard(
                                         resolve_standard_executor(url).with_context(|| {
                                             format!("standard executor \"{url}\" does not exist")
                                         })?,
@@ -151,7 +152,7 @@ where
                             ExecutorCacheState::New | ExecutorCacheState::Updated => {
                                 return Ok((
                                     package_id,
-                                    ExecutorResolution::Custom(custom_executor_resolution),
+                                    ResolvedExecutor::Custom(custom_executor_resolution),
                                 ))
                             }
                             ExecutorCacheState::Cached => {
@@ -159,7 +160,7 @@ where
                             }
                         }
                     }
-                    Ok((package_id, ExecutorResolution::Custom(cached.unwrap())))
+                    Ok((package_id, ResolvedExecutor::Custom(cached.unwrap())))
                 })
             });
 
@@ -205,10 +206,6 @@ fn resolve_custom_executor(
         .transpose()
         .with_context(|| format!("failed to restore solution state for executor {url}"))?;
 
-    let load_context = LoadContext {
-        workspace: context.workspace,
-    };
-
     let (executor, next_cached_metadata) = match maybe_cached_metadata {
         Some(cached_metadata) => {
             context.logger.debug(format!("{url} exists in cache"));
@@ -216,9 +213,11 @@ fn resolve_custom_executor(
                 .update(url, &cached_metadata.resolution_state)
                 .with_context(|| {
                     format!(
-                    "failed to validate executor resolution for {url}. cache might be corrupted."
-                )
+                        "failed to validate executor resolution for {url}. cache might be corrupted."
+                    )
                 })?;
+
+            
 
             match executor_update {
                 Some(ExecutorSource {
