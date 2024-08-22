@@ -32,8 +32,8 @@
     "@docusaurus/module-type-aliases": "^3.3.2",
     "@tsconfig/docusaurus": "^2.0.2",
     "@types/node": "^20.14.2",
-    "eslint-config-rnz-main": "^1.0.4",
-    "eslint-config-rnz-web": "1.0.3",
+    "eslint-config-rnz-main": "^1.0.5",
+    "eslint-config-rnz-web": "1.0.5",
     "eslint-plugin-mdx": "^3.1.5",
     "eslint-plugin-react": "^7.35.0",
     "typescript": "^5.0"

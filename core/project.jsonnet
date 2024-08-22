@@ -3,16 +3,16 @@ local targets = import '../targets.jsonnet';
 local LocalEnv = import './local-env.jsonnet';
 
 local cargoDependencies = [
-  'blaze-common'
+  { crate: 'blaze-common', project: 'common' }
 ];
 
 local cargoBuildDependencies = [
-  'blaze-rust-bridge'
+  { crate: 'blaze-rust-bridge', project: 'rust-bridge' }
 ];
 
 local npmDependencies = [
-  'blaze-node-bridge',
-  'blaze-schemas',
+  'node-bridge',
+  'schemas'
 ];
 
 {
@@ -54,7 +54,7 @@ local npmDependencies = [
       },
       dependencies: [
         {
-          projects: cargoDependencies + cargoBuildDependencies,
+          projects: [dep.project for dep in cargoDependencies + cargoBuildDependencies],
           target: 'source'
         },
         {
@@ -75,7 +75,7 @@ local npmDependencies = [
       dependencies: [
         'check-version',
         {
-          projects: cargoDependencies + cargoBuildDependencies + npmDependencies,
+          projects: [dep.project for dep in cargoDependencies + cargoBuildDependencies] + npmDependencies,
           target: 'publish'
         }
       ]
@@ -88,8 +88,8 @@ local npmDependencies = [
       },
       options: {
         version: blaze.vars.publish.version,
-        workspaceDependencies: cargoDependencies,
-        workspaceBuildDependencies: cargoBuildDependencies
+        workspaceDependencies: [dep.crate for dep in cargoDependencies],
+        workspaceBuildDependencies: [dep.crate for dep in cargoBuildDependencies]
       }
     },
     clean: {

@@ -7,12 +7,14 @@ use super::resolver::{ExecutorResolver, ExecutorSource};
 
 const PACKAGE_LOCATION: &str = ".blaze/npm";
 
+#[allow(dead_code)]
 struct NpmResolver<'a> {
     options: NpmOptions,
     logger: &'a Logger,
     packages_root: PathBuf
 }
 
+#[allow(dead_code)]
 #[derive(Clone, Copy)]
 pub struct NpmResolverContext<'a> {
     workspace: &'a Workspace,

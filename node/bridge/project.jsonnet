@@ -9,6 +9,10 @@ local blaze = std.extVar('blaze');
                     {
                         program: 'npm',
                         arguments: ['install']
+                    },
+                    {
+                        program: 'npm',
+                        arguments: ['link', blaze.root + '/' + blaze.workspace.projects['node-devkit'].path]
                     }
                 ]
             },
@@ -19,7 +23,7 @@ local blaze = std.extVar('blaze');
                     filesMissing: ['node_modules']
                 }
             },
-            dependencies: ['blaze-node-devkit:link']
+            dependencies: ['node-devkit:link']
         },
         source: {
             cache: {
@@ -87,7 +91,7 @@ local blaze = std.extVar('blaze');
             dependencies: [
                 'build',
                 'check-version',
-                'blaze-node-devkit:publish'
+                'node-devkit:publish'
             ]
         },
         'check-version': {

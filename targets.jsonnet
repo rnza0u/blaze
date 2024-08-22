@@ -4,19 +4,19 @@ local Target(rustTriple=null, release = false, ext='') = {
   rustTriple: rustTriple,
   release: release,
   cli: {
-    outputPath: '{{ root }}/{{ workspace.projects.blaze-cli.path }}/' + targetDir
+    outputPath: '{{ root }}/{{ workspace.projects.cli.path }}/' + targetDir
       + (if rustTriple != null then '/' + rustTriple else '')
       + (if release then '/release' else '/debug'),
     filename: 'blaze' + ext
   },
   rustBridge: {
-    outputPath: '{{ root }}/{{ workspace.projects.blaze-rust-bridge.path }}/' + targetDir
+    outputPath: '{{ root }}/{{ workspace.projects.rust-bridge.path }}/' + targetDir
       + (if rustTriple != null then '/' + rustTriple else '')
       + (if release then '/release' else '/debug'), 
     filename: 'blaze-rust-bridge' + ext
   },
   nodeBridge: {
-    outputPath: '{{ root }}/{{ workspace.projects.blaze-node-bridge.path }}/dist',
+    outputPath: '{{ root }}/{{ workspace.projects.node-bridge.path }}/dist',
     bundle: 'main.js',
   }
 };

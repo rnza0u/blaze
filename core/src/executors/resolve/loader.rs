@@ -12,7 +12,7 @@ use blaze_common::{
 use serde::Serialize;
 
 use crate::executors::{
-    node::prelude::NodeExecutorLoader, rust::RustExecutorLoader, DynExecutor, Executor,
+    node::executor::NodeExecutorLoader, rust::RustExecutorLoader, DynExecutor, Executor,
 };
 
 pub type DynCustomExecutor = Box<dyn CustomExecutor>;

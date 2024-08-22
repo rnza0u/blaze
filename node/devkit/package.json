@@ -16,8 +16,8 @@
   "license": "MIT",
   "devDependencies": {
     "eslint": "^9.9.0",
-    "eslint-config-rnz-main": "^1.0.4",
-    "eslint-config-rnz-node": "^1.0.3",
+    "eslint-config-rnz-main": "^1.0.5",
+    "eslint-config-rnz-node": "^1.0.5",
     "typescript": "^5.5.2"
   },
   "dependencies": {

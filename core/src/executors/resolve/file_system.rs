@@ -6,10 +6,7 @@ use std::{
 
 use anyhow::{bail, Context};
 use blaze_common::{
-    cache::{FileChangesMatcher, MatchingBehavior},
-    error::Result,
-    executor::{FileSystemOptions, RebuildStrategy},
-    value::{to_value, Value},
+    cache::{FileChangesMatcher, MatchingBehavior}, error::Result, executor::{ExecutorKind, FileSystemOptions, RebuildStrategy}, util::normalize_path, value::{to_value, Value}
 };
 
 use serde::{Deserialize, Serialize};
@@ -18,7 +15,7 @@ use url::Url;
 use crate::system::file_changes::{MatchedFiles, MatchedFilesState};
 
 use super::{
-    kinds::infer_local_executor_type, loader::LoadMetadata, resolver::ExecutorSource,
+    kinds::infer_local_executor_type, loader::{loader_for_executor_kind, LoadMetadata}, resolver::{ExecutorResolution, ExecutorSource},
     ExecutorResolver,
 };
 
@@ -38,15 +35,25 @@ fn default_file_changes_matchers(root: &Path) -> BTreeSet<FileChangesMatcher> {
 /// Resolves an executor based on a file URL.
 pub struct FileSystemResolver {
     options: FileSystemOptions,
-    workspace_root: PathBuf,
+    default_cwd: PathBuf,
 }
 
 impl FileSystemResolver {
-    pub fn new(workspace_root: &Path, options: FileSystemOptions) -> Self {
+    pub fn new(default_cwd: &Path, options: FileSystemOptions) -> Self {
         Self {
             options,
-            workspace_root: workspace_root.to_owned(),
+            default_cwd: default_cwd.to_owned(),
         }
+    }
+
+    fn get_canonical_root_path(&self, url: &Url) -> Result<PathBuf> {
+        let url_path = normalize_path(Path::new(url.path()))?;
+        let absolute = if url_path.is_absolute() {
+            url_path.to_path_buf()
+        } else {
+            self.default_cwd.join(url_path)
+        };
+        Ok(dunce::canonicalize(absolute)?)
     }
 
     fn get_matched_files(&self, root: &Path) -> Result<MatchedFiles> {
@@ -56,8 +63,8 @@ impl FileSystemResolver {
 }
 
 impl ExecutorResolver for FileSystemResolver {
-    fn resolve(&self, url: &Url) -> Result<ExecutorSource> {
-        let root = get_canonical_root_path(url, &self.workspace_root)
+    fn resolve(&self, url: &Url) -> Result<ExecutorResolution> {
+        let root = self.get_canonical_root_path(url)
             .with_context(|| format!("could not get canonical executor path from {url}"))?;
 
         let is_dir = match std::fs::metadata(&root) {
@@ -69,6 +76,15 @@ impl ExecutorResolver for FileSystemResolver {
         if !is_dir {
             bail!("{url} is not a directory. file:// URLs must point to the source files root directory of your executor.")
         }
+
+        let kind = if let Some(kind) = self.options.kind() {
+            kind
+        } else {
+            infer_local_executor_type(&root)?
+        };
+
+        let loader = loader_for_executor_kind(kind);
+
         Ok(ExecutorSource {
             state: to_value(State {
                 files: MatchedFilesState::from_files(self.get_matched_files(&root)?)?,
@@ -85,7 +101,7 @@ impl ExecutorResolver for FileSystemResolver {
     }
 
     fn update(&self, url: &Url, state: &Value) -> Result<Option<ExecutorSource>> {
-        let root = get_canonical_root_path(url, &self.workspace_root)
+        let root = get_canonical_root_path(url, &self.default_cwd)
             .with_context(|| format!("could not get canonical executor path from {url}"))?;
         let state = State::deserialize(state)?;
 
@@ -112,14 +128,4 @@ impl ExecutorResolver for FileSystemResolver {
             _ => Ok(None),
         }
     }
-}
-
-fn get_canonical_root_path(url: &Url, workspace_root: &Path) -> Result<PathBuf> {
-    let url_path = Path::new(url.path());
-    let absolute = if url_path.is_absolute() {
-        url_path.to_path_buf()
-    } else {
-        workspace_root.join(url_path)
-    };
-    Ok(dunce::canonicalize(absolute)?)
 }

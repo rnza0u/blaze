@@ -16,7 +16,7 @@ echo "Compiling Node devkit"
 cd "$root/node/devkit"
 npm install
 ./node_modules/.bin/tsc
-$sudo npm link
+$sudo npm link --install-links .
 
 echo "Compiling Node bridge"
 cd "$root/node/bridge"

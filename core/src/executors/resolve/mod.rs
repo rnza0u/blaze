@@ -8,6 +8,7 @@ pub mod npm;
 pub mod resolver;
 pub mod ssh_git;
 pub mod standard;
+pub mod builder;
 
 use std::{
     collections::{HashMap, HashSet},
@@ -17,14 +18,13 @@ use std::{
 use anyhow::Context;
 use blaze_common::{
     error::Result,
-    executor::{ExecutorKind, ExecutorReference, Location},
+    executor::{ExecutorReference, Location},
     logger::Logger,
     value::Value,
     workspace::Workspace,
 };
 use possibly::possibly;
 use rand::{thread_rng, RngCore};
-use resolver::ExecutorSource;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -36,10 +36,7 @@ use crate::{
 
 use standard::resolve_standard_executor;
 
-use self::{
-    loader::{loader_for_executor_kind, LoadContext},
-    resolver::{resolver_for_location, ExecutorResolver},
-};
+use self:: resolver::{resolver_for_location, ExecutorResolver};
 
 /// Extra data needed in order to resolve an executor.
 #[derive(Clone, Copy)]
@@ -49,30 +46,22 @@ pub struct CustomResolutionContext<'a> {
     pub logger: &'a Logger,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct CachedMetadata {
-    pub kind: ExecutorKind,
-    pub resolution_state: Value,
-    pub executor_metadata: Value,
-    pub nonce: u64,
-}
-
 pub struct ResolvedExecutors {
-    executors: HashMap<u64, ExecutorResolution>,
+    executors: HashMap<u64, ResolvedExecutor>,
 }
 
 impl ResolvedExecutors {
-    pub fn get_for_reference(&self, reference: &ExecutorReference) -> Option<&ExecutorResolution> {
+    pub fn get_for_reference(&self, reference: &ExecutorReference) -> Option<&ResolvedExecutor> {
         self.executors.get(&get_executor_package_id(reference))
     }
 }
 
-pub enum ExecutorResolution {
+pub enum ResolvedExecutor {
     Standard(DynExecutor),
     Custom(CustomExecutorResolution),
 }
 
-impl ExecutorResolution {
+impl ResolvedExecutor {
     pub fn executor(&self) -> &DynExecutor {
         match self {
             Self::Standard(executor) => executor,
@@ -110,7 +99,7 @@ where
             }
         }
         let mut resolutions =
-            HashMap::<u64, ExecutorResolution>::with_capacity(references_by_package_id.len());
+            HashMap::<u64, ResolvedExecutor>::with_capacity(references_by_package_id.len());
         let mut references_drain = references_by_package_id.drain();
         let mut runner = ParallelRunner::new(
             scope,
@@ -131,7 +120,7 @@ where
                             ExecutorReference::Standard { url } => {
                                 return Ok((
                                     package_id,
-                                    ExecutorResolution::Standard(
+                                    ResolvedExecutor::Standard(
                                         resolve_standard_executor(url).with_context(|| {
                                             format!("standard executor \"{url}\" does not exist")
                                         })?,
@@ -141,9 +130,9 @@ where
                             ExecutorReference::Custom { url, location } => (url, location),
                         };
 
-                        let lock = ProcessLock::try_new(context.workspace.root(), package_id)?;
+                        let resolution_lock = ProcessLock::try_new(context.workspace.root(), package_id)?;
 
-                        let custom_executor_resolution = lock.locked(|| {
+                        let custom_executor_resolution = resolution_lock.locked(|| {
                             resolve_custom_executor(url, location, package_id, context)
                         })??;
 
@@ -151,7 +140,7 @@ where
                             ExecutorCacheState::New | ExecutorCacheState::Updated => {
                                 return Ok((
                                     package_id,
-                                    ExecutorResolution::Custom(custom_executor_resolution),
+                                    ResolvedExecutor::Custom(custom_executor_resolution),
                                 ))
                             }
                             ExecutorCacheState::Cached => {
@@ -159,7 +148,7 @@ where
                             }
                         }
                     }
-                    Ok((package_id, ExecutorResolution::Custom(cached.unwrap())))
+                    Ok((package_id, ResolvedExecutor::Custom(cached.unwrap())))
                 })
             });
 
@@ -189,120 +178,77 @@ pub struct CustomExecutorResolution {
     nonce: u64,
 }
 
+#[derive(Serialize, Deserialize)]
+struct ResolutionCacheMetadata {
+    resolution_state: Value,
+    nonce: u64,
+}
+
 fn resolve_custom_executor(
     url: &Url,
     location: &Location,
     package_id: u64,
     context: CustomResolutionContext<'_>,
 ) -> Result<CustomExecutorResolution> {
-    let resolver: Box<dyn ExecutorResolver> = resolver_for_location(location.clone(), context);
-
+    
     let state_key = format!("executors/{package_id}");
-
-    let maybe_cached_metadata = context
+    let resolver: Box<dyn ExecutorResolver> = resolver_for_location(location.clone(), context);
+    
+    let maybe_existing_metadata = context
         .cache
-        .and_then(|cache| cache.restore::<CachedMetadata>(&state_key).transpose())
+        .and_then(|cache| cache.restore::<ResolutionCacheMetadata>(&state_key).transpose())
         .transpose()
-        .with_context(|| format!("failed to restore solution state for executor {url}"))?;
+        .with_context(|| format!("failed to restore resolution state for executor {url}, cache might be corrupted"))?;
 
-    let load_context = LoadContext {
-        workspace: context.workspace,
-    };
+    let gen_nonce = || thread_rng().next_u64();
 
-    let (executor, next_cached_metadata) = match maybe_cached_metadata {
-        Some(cached_metadata) => {
-            context.logger.debug(format!("{url} exists in cache"));
-            let executor_update = resolver
-                .update(url, &cached_metadata.resolution_state)
-                .with_context(|| {
-                    format!(
-                    "failed to validate executor resolution for {url}. cache might be corrupted."
-                )
-                })?;
-
-            match executor_update {
-                Some(ExecutorSource {
-                    state,
-                    load_metadata,
-                }) => {
-                    let reloaded_executor = loader_for_executor_kind(load_metadata.kind)
-                        .load_from_src(&load_metadata.src, load_context)?;
-                    context
-                        .logger
-                        .debug(format!("{url} was reloaded from source"));
-                    let reloaded_executor_metadata = reloaded_executor.metadata()?;
-                    let nonce = thread_rng().next_u64();
-                    (
-                        CustomExecutorResolution {
-                            executor: reloaded_executor.to_dyn(),
-                            state: ExecutorCacheState::Updated,
-                            nonce,
-                        },
-                        CachedMetadata {
-                            kind: load_metadata.kind,
-                            executor_metadata: reloaded_executor_metadata,
-                            resolution_state: state,
-                            nonce,
-                        },
-                    )
-                }
-                None => {
-                    let cached_executor = loader_for_executor_kind(cached_metadata.kind)
-                        .load_from_metadata(&cached_metadata.executor_metadata)?;
-                    context
-                        .logger
-                        .debug(format!("{url} was reloaded from cache"));
-                    (
-                        CustomExecutorResolution {
-                            executor: cached_executor.to_dyn(),
-                            state: ExecutorCacheState::Cached,
-                            nonce: cached_metadata.nonce,
-                        },
-                        cached_metadata,
-                    )
-                }
-            }
-        }
-        None => {
-            let resolution = resolver
-                .resolve(url)
-                .with_context(|| format!("failed to resolve executor {url}"))?;
-
-            context.logger.debug(format!("{url} was resolved"));
-
-            let executor = loader_for_executor_kind(resolution.load_metadata.kind)
-                .load_from_src(&resolution.load_metadata.src, load_context)?;
-
-            context
-                .logger
-                .debug(format!("{url} was loaded from source"));
-
-            let executor_metadata = executor.metadata()?;
-            let nonce: u64 = thread_rng().next_u64();
+    let (nonce, maybe_new_state, executor) = match &maybe_existing_metadata {
+        Some(existing_metadata) => {
+            let update = resolver.update(url, &existing_metadata.resolution_state)
+                .with_context(|| format!("failed to update executor {url}"))?;
 
             (
-                CustomExecutorResolution {
-                    executor: executor.to_dyn(),
-                    state: ExecutorCacheState::New,
-                    nonce,
-                },
-                CachedMetadata {
-                    kind: resolution.load_metadata.kind,
-                    executor_metadata,
-                    resolution_state: resolution.state,
-                    nonce,
-                },
+                if update.state.is_some() { 
+                    gen_nonce()
+                } else {  
+                    existing_metadata.nonce
+                }, 
+                update.state, 
+                update.executor
+            )
+        },
+        None => {
+            let resolution = resolver.resolve(url)
+                .with_context(|| format!("failed to resolve executor {url}"))?;
+
+            (
+                gen_nonce(),
+                Some(resolution.state),
+                resolution.executor
             )
         }
     };
 
-    if let Some(cache) = context.cache {
-        cache
-            .cache(&state_key, &next_cached_metadata)
-            .with_context(|| format!("failed to cache executor metadata for {url}"))?;
+    if let Some((store, new_state)) = context.cache.zip(maybe_new_state.as_ref()){
+        store.cache(&state_key, &ResolutionCacheMetadata {
+            nonce,
+            resolution_state: new_state.to_owned()
+        })
+        .with_context(|| format!("failed to cache executor metadata for {url}"))?
     }
 
-    Ok(executor)
+    Ok(CustomExecutorResolution {
+        executor,
+        nonce,
+        state: if maybe_existing_metadata.is_none(){
+            ExecutorCacheState::Cached
+        } else if maybe_new_state.is_some(){
+            ExecutorCacheState::Updated
+        } else {
+            ExecutorCacheState::New
+        }
+    })
+   
 }
 
 pub fn get_executor_package_id(reference: &ExecutorReference) -> u64 {

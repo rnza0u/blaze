@@ -2,7 +2,10 @@ local blaze = std.extVar('blaze');
 local LocalEnv = import '../core/local-env.jsonnet';
 local targets = import '../targets.jsonnet';
 
-local workspaceDependencies = ['blaze-common', 'blaze-core'];
+local workspaceDependencies = [
+  { crate: 'blaze-common', project: 'common' }, 
+  { crate: 'blaze-core', project: 'core' }
+];
 
 local finalTargets = std.filter(function(name) targets[name].rustTriple != null, std.objectFields(targets));
 
@@ -123,7 +126,7 @@ local deploymentsByTarget = {
       dependencies: [
         'check-version',
         {
-          projects: workspaceDependencies,
+          projects: [dep.project for dep in workspaceDependencies],
           target: 'publish',
         },
       ],
@@ -147,7 +150,7 @@ local deploymentsByTarget = {
       },
       options: {
         version: blaze.vars.publish.version,
-        workspaceDependencies: workspaceDependencies,
+        workspaceDependencies: [dep.crate for dep in workspaceDependencies],
       },
     },
     source: {
@@ -160,7 +163,7 @@ local deploymentsByTarget = {
           ]
         }
       },
-      dependencies: [name + ':source' for name in workspaceDependencies]
+      dependencies: [dep.project + ':source' for dep in workspaceDependencies]
     },
     lint: {
       executor: 'std:commands',

@@ -68,8 +68,8 @@ local ci = {
     Step({
         name: 'Build',
         commands: [
-            'blaze run blaze-cli:build-release',
-            'blaze run --projects blaze-website,blaze-downloads --target build',
+            'blaze run cli:build-release',
+            'blaze run --projects website,downloads --target build',
         ],
         volumes: dockerVolumes,
         when: {
@@ -79,7 +79,7 @@ local ci = {
     Step({
         name: 'Test',
         commands: [
-            'blaze run blaze-tests:run-all'
+            'blaze run tests:run-all'
         ],
         volumes: dockerVolumes,
         when: {
@@ -135,7 +135,7 @@ local publish = {
         Step({
             name: 'Deploy binaries',
             commands: [
-                'blaze run blaze-cli:deploy'
+                'blaze run cli:deploy'
             ],
             volumes: [
                 {
@@ -147,7 +147,7 @@ local publish = {
         Step({
             name: 'Push tags',
             commands: [
-                'blaze run blaze-cli:push-tags'
+                'blaze run cli:push-tags'
             ],
             volumes: [
                 {

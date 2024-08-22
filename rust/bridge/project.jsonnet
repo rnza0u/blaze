@@ -2,8 +2,8 @@ local targets = import '../../targets.jsonnet';
 local blaze = std.extVar('blaze');
 
 local workspaceDependencies = [
-    { project: 'blaze-rust-devkit', crate: 'blaze-devkit' }, 
-    { project: 'blaze-common', crate: 'blaze-common' }
+    { project: 'rust-devkit', crate: 'blaze-devkit' }, 
+    { project: 'common', crate: 'blaze-common' }
 ];
 
 {
@@ -68,7 +68,7 @@ local workspaceDependencies = [
             executor: {
                 url: 'https://github.com/rnza0u/blaze-executors.git',
                 format: 'Git',
-                path: 'cargo-check-version'
+                path: 'cargo-version-check'
             },
             options: {
                 version: blaze.vars.publish.version,

@@ -1,6 +1,6 @@
 local blaze = std.extVar('blaze');
 
-local workspaceDependencies = ['blaze-common'];
+local workspaceDependencies = ['common'];
 
 {
     targets: {
@@ -68,7 +68,7 @@ local workspaceDependencies = ['blaze-common'];
             },
             options: {
                 version: blaze.vars.publish.version,
-                workspaceDependencies: workspaceDependencies
+                workspaceDependencies: ['blaze-' + name for name in workspaceDependencies]
             }
         },
         clean: {

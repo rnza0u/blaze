@@ -1,6 +1,8 @@
 use blaze_common::{error::Result, executor::Location, value::Value};
 use url::Url;
 
+use crate::executors::DynExecutor;
+
 use super::{
     file_system::FileSystemResolver, git::GitResolver, git_common::GitResolverContext,
     http_git::GitOverHttpResolver, loader::LoadMetadata, ssh_git::GitOverSshResolver,
@@ -12,10 +14,20 @@ pub struct ExecutorSource {
     pub state: Value,
 }
 
-pub trait ExecutorResolver {
-    fn resolve(&self, url: &Url) -> Result<ExecutorSource>;
+pub struct ExecutorResolution {
+    pub state: Value,
+    pub executor: DynExecutor
+}
 
-    fn update(&self, url: &Url, state: &Value) -> Result<Option<ExecutorSource>>;
+pub struct ExecutorUpdate {
+    pub state: Option<Value>,
+    pub executor: DynExecutor
+}
+
+pub trait ExecutorResolver {
+    fn resolve(&self, url: &Url) -> Result<ExecutorResolution>;
+
+    fn update(&self, url: &Url, state: &Value) -> Result<ExecutorUpdate>;
 }
 
 pub fn resolver_for_location<'a>(

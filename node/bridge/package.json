@@ -15,15 +15,15 @@
   "author": "Renaud N'zaou",
   "license": "MIT",
   "dependencies": {
-    "@blaze-repo/node-devkit": "0.2.11",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "@blaze-repo/node-devkit": "0.2.11"
   },
   "devDependencies": {
     "@types/node": "^20.8.3",
     "esbuild": "0.21.5",
     "eslint": "^9.9.0",
-    "eslint-config-rnz-main": "^1.0.4",
-    "eslint-config-rnz-node": "^1.0.3",
+    "eslint-config-rnz-main": "^1.0.5",
+    "eslint-config-rnz-node": "^1.0.5",
     "typescript": "^5.5.2"
   }
 }

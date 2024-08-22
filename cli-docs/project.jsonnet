@@ -1,7 +1,9 @@
 local blaze = std.extVar('blaze');
 local targets = import '../targets.jsonnet';
 local LocalEnv = import '../core/local-env.jsonnet';
-local workspaceDependencies = ['blaze-cli'];
+local workspaceDependencies = [
+    { crate: 'blaze-cli', project: 'cli' }
+];
 
 {
     targets: {
@@ -17,7 +19,7 @@ local workspaceDependencies = ['blaze-cli'];
             },
             dependencies: [
                 {
-                    projects: workspaceDependencies,
+                    projects: [dep.project for dep in workspaceDependencies],
                     target: 'source'
                 }
             ]
@@ -56,10 +58,7 @@ local workspaceDependencies = ['blaze-cli'];
                 ]
             },
             dependencies: [
-                {
-                    projects: workspaceDependencies,
-                    target: 'source'
-                }
+                'source'
             ]
         },
         build: {

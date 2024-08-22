@@ -3,7 +3,7 @@ local LocalEnv = import '../core/local-env.jsonnet';
 local targets = import '../targets.jsonnet';
 local finalTargets = std.filter(function(name) targets[name].rustTriple != null, std.objectFields(targets));
 
-local workspaceDependencies = ['blaze-core'];
+local workspaceDependencies = [{ project: 'core', crate: 'blaze-core' }];
 
 local testTargets = {
     ['run-' + name]: {
@@ -58,7 +58,7 @@ local testTargets = {
             cache: {},
             dependencies: [
                 {
-                    projects: workspaceDependencies,
+                    projects: [dep.project for dep in workspaceDependencies],
                     target: 'source'
                 }
             ]
@@ -76,7 +76,7 @@ local testTargets = {
             dependencies: [
                 'check-version',
                 {
-                    projects: workspaceDependencies,
+                    projects: [dep.project for dep in workspaceDependencies],
                     target: 'publish'
                 }
             ]
@@ -89,7 +89,7 @@ local testTargets = {
             },
             options: {
                 version: blaze.vars.publish.version,
-                workspaceDevDependencies: workspaceDependencies
+                workspaceDevDependencies: [dep.crate for dep in workspaceDependencies]
             }
         },
         run: {

@@ -1,7 +1,7 @@
 local docusaurus = 'node_modules/.bin/docusaurus';
 local image = 'registry.rnzaou.me/blaze-website';
 local env = {
-    'ASSETS_LOCATION': '{{ workspace.root }}/{{ workspace.projects.blaze-assets.path }}',
+    'ASSETS_LOCATION': '{{ workspace.root }}/{{ workspace.projects.assets.path }}',
     'PROJECT_ROOT': '{{ project.root }}'
 };
 local blaze = std.extVar('blaze');
@@ -117,14 +117,14 @@ local blaze = std.extVar('blaze');
                         program: 'cp',
                         arguments: [
                             '--recursive',
-                            '{{ workspace.root }}/{{ workspace.projects.blaze-schemas.path }}/schemas/',
+                            '{{ workspace.root }}/{{ workspace.projects.schemas.path }}/schemas/',
                             'static/'
                         ]
                     }
                 ]
             },
             dependencies: [
-                'blaze-schemas:build'
+                'schemas:build'
             ]
         },
         'move-cli-docs': {
@@ -150,14 +150,14 @@ local blaze = std.extVar('blaze');
                         program: 'cp',
                         arguments: [
                             '--recursive',
-                            '{{ workspace.root }}/{{ workspace.projects.blaze-cli-docs.path }}/dist/.',
+                            '{{ workspace.root }}/{{ workspace.projects.cli-docs.path }}/dist/.',
                             'docs/cli'
                         ]
                     }
                 ]
             },
             dependencies: [
-                'blaze-cli-docs:build'
+                'cli-docs:build'
             ],
         },
         clean: {
