@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 use blaze_common::{
     error::{Error, Result},
-    executor::{GitCheckout, GitOptions},
+    executor::{ExecutorKind, GitCheckout, GitOptions},
     logger::Logger,
     value::{to_value, Value},
     workspace::Workspace,
@@ -15,7 +15,10 @@ use url::Url;
 use crate::system::random::random_string;
 
 use super::{
+    builder::builder_for_executor_kind,
     kinds::infer_local_executor_type,
+    loader::{loader_for_executor_kind, ExecutorWithMetadata},
+    resolver::{ExecutorResolution, ExecutorUpdate},
     ExecutorResolver,
 };
 
@@ -24,6 +27,9 @@ const REPOSITORIES_PATH: &str = ".blaze/repositories";
 #[derive(Serialize, Deserialize)]
 struct State {
     repository_path: PathBuf,
+    src_path: PathBuf,
+    metadata: Value,
+    kind: ExecutorKind
 }
 
 pub struct GitHeadlessResolver<'a> {
@@ -70,7 +76,7 @@ impl<'a> GitHeadlessResolver<'a> {
 }
 
 impl ExecutorResolver for GitHeadlessResolver<'_> {
-    fn resolve(&self, url: &Url) -> Result<ExecutorSource> {
+    fn resolve(&self, url: &Url) -> Result<ExecutorResolution> {
         let repository_path = self.repositories_root.join(random_string(12));
 
         if repository_path.try_exists()? {
@@ -119,35 +125,43 @@ impl ExecutorResolver for GitHeadlessResolver<'_> {
             repository.checkout_head(Some(&mut CheckoutBuilder::default().force()))?;
         }
 
-        
-        let state = State {
-            repository_path: repository_path.to_owned(),
-        };
         let src_path = if let Some(path) = &self.git_options.path() {
             repository_path.join(path)
         } else {
-            repository_path
+            repository_path.to_owned()
         };
-        
-        Ok(ExecutorSource {
-            load_metadata: LoadMetadata {
-                kind: self
-                    .git_options
-                    .kind()
-                    .map(Ok::<_, Error>)
-                    .unwrap_or_else(|| infer_local_executor_type(&src_path))?,
-                src: src_path,
-            },
-            state: to_value(state)?,
+
+        let kind = if let Some(kind) = self.git_options.kind() {
+            kind
+        } else {
+            infer_local_executor_type(&src_path)?
+        };
+
+        builder_for_executor_kind(kind).build(&src_path)?;
+
+        let ExecutorWithMetadata { executor, metadata } =
+            loader_for_executor_kind(kind).load_from_src(&src_path)?;
+
+        Ok(ExecutorResolution {
+            executor,
+            state: to_value(State {
+                metadata,
+                repository_path,
+                src_path,
+            })?,
         })
     }
 
-    fn update(&self, url: &Url, state: &Value) -> Result<Option<ExecutorSource>> {
+    fn update(&self, url: &Url, state: &Value) -> Result<ExecutorUpdate> {
         let state = State::deserialize(state)?;
         let repository = git2::Repository::open(&state.repository_path)?;
 
         if !self.git_options.pull() {
-            return Ok(None);
+            return Ok(ExecutorUpdate { 
+                executor: (), 
+                new_state: (), 
+                updated: () 
+            });
         }
 
         let refspecs = match &self.git_options.checkout() {
