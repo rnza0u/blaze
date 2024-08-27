@@ -1,8 +1,8 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-use anyhow::{anyhow, Context};
+use anyhow::anyhow;
 use blaze_common::{
-    error::{Error, Result},
+    error::Result,
     executor::{ExecutorKind, GitCheckout, GitOptions},
     logger::Logger,
     value::{to_value, Value},
@@ -15,9 +15,8 @@ use url::Url;
 use crate::system::random::random_string;
 
 use super::{
-    builder::builder_for_executor_kind,
     kinds::infer_local_executor_type,
-    loader::{loader_for_executor_kind, ExecutorWithMetadata},
+    loader::{ExecutorLoadStrategy, ExecutorLoader, ExecutorWithMetadata, LoaderContext},
     resolver::{ExecutorResolution, ExecutorUpdate},
     ExecutorResolver,
 };
@@ -34,7 +33,7 @@ struct State {
 
 pub struct GitHeadlessResolver<'a> {
     git_options: GitOptions,
-    logger: &'a Logger,
+    context: GitResolverContext<'a>,
     repositories_root: PathBuf,
     remote_callbacks_customizer: Box<dyn Fn(&mut RemoteCallbacks<'_>)>,
     fetch_options_customizer: Box<dyn Fn(&mut FetchOptions<'_>)>,
@@ -54,7 +53,7 @@ impl<'a> GitHeadlessResolver<'a> {
         fetch_options_customizer: impl Fn(&mut FetchOptions<'_>) + 'static,
     ) -> Self {
         Self {
-            logger: context.logger,
+            context,
             repositories_root: context.workspace.root().join(REPOSITORIES_PATH),
             remote_callbacks_customizer: Box::new(remote_callbacks_customizer),
             fetch_options_customizer: Box::new(fetch_options_customizer),
@@ -72,6 +71,35 @@ impl<'a> GitHeadlessResolver<'a> {
         fetch_options.remote_callbacks(remote_callbacks);
         fetch_options.download_tags(git2::AutotagOption::All);
         fetch_options
+    }
+
+    fn get_loader(&self, kind: ExecutorKind) -> Box<dyn ExecutorLoader> {
+        let strategy = match kind {
+            ExecutorKind::Node =>  ExecutorLoadStrategy::NodeLocal,
+            ExecutorKind::Rust => ExecutorLoadStrategy::RustLocal
+        };
+
+        strategy.get_loader(LoaderContext { workspace: &self.context.workspace })
+    }
+
+    fn get_src_path(&self, repository_path: &Path) -> PathBuf {
+        if let Some(path) = &self.git_options.path() {
+            repository_path.join(path)
+        } else {
+            repository_path.to_owned()
+        }
+    }
+
+    fn build_and_load(&self, src_path: &Path) -> Result<(ExecutorWithMetadata, ExecutorKind)> {
+        let kind = if let Some(kind) = self.git_options.kind() {
+            kind
+        } else {
+            infer_local_executor_type(&src_path)?
+        };
+
+        let loader = self.get_loader(kind);
+
+        Ok((loader.load_from_src(&src_path)?, kind))
     }
 }
 
@@ -96,7 +124,7 @@ impl ExecutorResolver for GitHeadlessResolver<'_> {
 
         let repository = repo_builder.clone(url.as_ref(), &repository_path)?;
 
-        self.logger
+        self.context.logger
             .debug(format!("cloned {} to {}", url, repository_path.display()));
 
         if let Some(checkout) = &self.git_options.checkout() {
@@ -125,26 +153,17 @@ impl ExecutorResolver for GitHeadlessResolver<'_> {
             repository.checkout_head(Some(&mut CheckoutBuilder::default().force()))?;
         }
 
-        let src_path = if let Some(path) = &self.git_options.path() {
-            repository_path.join(path)
-        } else {
-            repository_path.to_owned()
-        };
+        let src_path = self.get_src_path(&repository_path);
 
-        let kind = if let Some(kind) = self.git_options.kind() {
-            kind
-        } else {
-            infer_local_executor_type(&src_path)?
-        };
-
-        builder_for_executor_kind(kind).build(&src_path)?;
-
-        let ExecutorWithMetadata { executor, metadata } =
-            loader_for_executor_kind(kind).load_from_src(&src_path)?;
+        let (
+            ExecutorWithMetadata { executor, metadata },
+            kind,
+        ) = self.build_and_load(&repository_path)?;
 
         Ok(ExecutorResolution {
             executor,
             state: to_value(State {
+                kind,
                 metadata,
                 repository_path,
                 src_path,
@@ -157,10 +176,11 @@ impl ExecutorResolver for GitHeadlessResolver<'_> {
         let repository = git2::Repository::open(&state.repository_path)?;
 
         if !self.git_options.pull() {
+            let loader = self.get_loader(state.kind);
             return Ok(ExecutorUpdate { 
-                executor: (), 
-                new_state: (), 
-                updated: () 
+                executor: loader.load_from_metadata(&state.metadata)?, 
+                new_state: None, 
+                updated: false 
             });
         }
 
@@ -185,7 +205,7 @@ impl ExecutorResolver for GitHeadlessResolver<'_> {
 
         remote.fetch(&refspecs, Some(&mut fetch_options), None)?;
 
-        self.logger
+        self.context.logger
             .debug(format!("fetched refspecs {:?} for {}", refspecs, url));
 
         let fetch_head = repository.find_reference("FETCH_HEAD")?;
@@ -201,9 +221,14 @@ impl ExecutorResolver for GitHeadlessResolver<'_> {
             .ok_or_else(|| anyhow!("could not resolve commit id for HEAD"))?;
 
         if fetch_head_commit == head_commit {
-            self.logger
-                .debug(format!("{url} is up to date ({fetch_head_commit})"));
-            return Ok(None);
+            self.context.logger
+                .debug(format!("{url} fetch head commit has not changed ({fetch_head_commit})"));
+            let loader = self.get_loader(state.kind);
+            return Ok(ExecutorUpdate { 
+                executor: loader.load_from_metadata(&state.metadata)?, 
+                new_state: None, 
+                updated: false 
+            });
         }
 
         head.set_target(
@@ -216,16 +241,26 @@ impl ExecutorResolver for GitHeadlessResolver<'_> {
         )?;
         repository.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))?;
 
-        self.logger.debug(format!(
-            "executor files were updated for {url} (now at {fetch_head_commit})"
+        self.context.logger.debug(format!(
+            "repository files were updated for {url} (now at {fetch_head_commit})"
         ));
 
-        Ok(Some(ExecutorSource {
-            state: to_value(&state)?,
-            load_metadata: LoadMetadata {
-                kind: infer_local_executor_type(&state.repository_path)?,
-                src: state.repository_path,
-            },
-        }))
+        let src_path = self.get_src_path(&state.repository_path);
+
+        let (
+            ExecutorWithMetadata { executor, metadata },
+            kind,
+        ) =  self.build_and_load(&src_path)?;
+
+        Ok(ExecutorUpdate {
+            executor,
+            new_state: Some(to_value(State {
+                kind,
+                metadata,
+                repository_path: state.repository_path,
+                src_path,
+            })?),
+            updated: true
+        })
     }
 }

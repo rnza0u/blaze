@@ -3,3 +3,4 @@
 !.blaze/.jpath
 !.blaze/variables.*
 .user.env
+user-variables.*

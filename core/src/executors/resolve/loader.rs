@@ -1,14 +1,11 @@
-use std::{
-    panic::{RefUnwindSafe, UnwindSafe},
-    path::{Path, PathBuf},
-};
+use std::path::Path;
 
 use blaze_common::{
-    error::Result, executor::ExecutorKind, value::Value, workspace::Workspace
+    error::Result, value::Value, workspace::Workspace
 };
 
 use crate::executors::{
-    node::prelude::NodeExecutorLoader, rust::RustExecutorLoader, DynExecutor
+    node::loaders::LocalNodeExecutorLoader, rust::loaders::LocalRustExecutorLoader, DynExecutor
 };
 
 pub struct ExecutorWithMetadata {
@@ -22,19 +19,24 @@ pub trait ExecutorLoader {
     fn load_from_metadata(&self, metadata: &Value) -> Result<DynExecutor>;
 }
 
-#[derive(Clone, Copy)]
-pub struct LoadContext<'a> {
-    pub workspace: &'a Workspace,
+pub struct LoaderContext<'a> {
+    pub workspace: &'a Workspace
 }
 
-pub struct LoadMetadata {
-    pub src: PathBuf,
-    pub kind: ExecutorKind,
+#[allow(unused)]
+pub enum ExecutorLoadStrategy {
+    RustLocal,
+    RustCrate,
+    NodeLocal,
+    NodePackage,
 }
 
-pub fn loader_for_executor_kind(kind: ExecutorKind) -> Box<dyn ExecutorLoader> {
-    match kind {
-        ExecutorKind::Node => Box::new(NodeExecutorLoader),
-        ExecutorKind::Rust => Box::new(RustExecutorLoader),
+impl ExecutorLoadStrategy {
+    pub fn get_loader(&self, context: LoaderContext<'_>) -> Box<dyn ExecutorLoader> {
+        match self {
+            Self::NodeLocal => Box::new(LocalNodeExecutorLoader),
+            Self::RustLocal => Box::new(LocalRustExecutorLoader::new(context.workspace.root())),
+            _ => todo!()
+        }
     }
 }

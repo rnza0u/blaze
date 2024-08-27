@@ -23,7 +23,7 @@ local blaze = std.extVar('blaze');
                     filesMissing: ['node_modules']
                 }
             },
-            dependencies: ['node-devkit:link']
+            dependencies: ['node-devkit:build']
         },
         source: {
             cache: {

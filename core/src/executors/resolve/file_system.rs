@@ -10,6 +10,7 @@ use blaze_common::{
     error::Result,
     executor::{ExecutorKind, FileSystemOptions, RebuildStrategy},
     value::{to_value, Value},
+    workspace::Workspace,
 };
 
 use serde::{Deserialize, Serialize};
@@ -18,9 +19,8 @@ use url::Url;
 use crate::system::file_changes::{MatchedFiles, MatchedFilesState};
 
 use super::{
-    builder::builder_for_executor_kind,
     kinds::infer_local_executor_type,
-    loader::{loader_for_executor_kind, ExecutorWithMetadata},
+    loader::{ExecutorLoadStrategy, ExecutorLoader, ExecutorWithMetadata, LoaderContext},
     resolver::{ExecutorResolution, ExecutorResolver, ExecutorUpdate},
 };
 
@@ -46,18 +46,19 @@ fn default_file_changes_matchers(root: &Path) -> BTreeSet<FileChangesMatcher> {
     .into()
 }
 
-/// Resolves an executor based on a file URL.
-pub struct FileSystemResolver {
-    options: FileSystemOptions,
-    relative_path_root: PathBuf,
+pub struct FileSystemResolverContext<'a> {
+    pub workspace: &'a Workspace,
 }
 
-impl FileSystemResolver {
-    pub fn new(workspace_root: &Path, options: FileSystemOptions) -> Self {
-        Self {
-            options,
-            relative_path_root: workspace_root.to_owned(),
-        }
+/// Resolves an executor based on a file URL.
+pub struct FileSystemResolver<'a> {
+    options: FileSystemOptions,
+    context: FileSystemResolverContext<'a>,
+}
+
+impl<'a> FileSystemResolver<'a> {
+    pub fn new(options: FileSystemOptions, context: FileSystemResolverContext<'a>) -> Self {
+        Self { options, context }
     }
 
     fn get_canonical_root_path(&self, url: &Url) -> Result<PathBuf> {
@@ -65,7 +66,7 @@ impl FileSystemResolver {
         let absolute = if url_path.is_absolute() {
             url_path.to_path_buf()
         } else {
-            self.relative_path_root.join(url_path)
+            self.context.workspace.root().join(url_path)
         };
 
         let is_dir = match std::fs::metadata(&absolute) {
@@ -89,6 +90,17 @@ impl FileSystemResolver {
         MatchedFiles::try_new(root, self.options.watch().unwrap_or(&default))
     }
 
+    fn get_loader(&self, kind: ExecutorKind) -> Box<dyn ExecutorLoader> {
+        let strategy = match kind {
+            ExecutorKind::Node => ExecutorLoadStrategy::NodeLocal,
+            ExecutorKind::Rust => ExecutorLoadStrategy::RustLocal,
+        };
+
+        strategy.get_loader(LoaderContext {
+            workspace: &self.context.workspace,
+        })
+    }
+
     fn build_and_load(&self, root: &Path) -> Result<(ExecutorWithMetadata, ExecutorKind)> {
         let kind = if let Some(kind) = self.options.kind() {
             kind
@@ -96,12 +108,7 @@ impl FileSystemResolver {
             infer_local_executor_type(&root)?
         };
 
-        let builder = builder_for_executor_kind(kind);
-        let loader = loader_for_executor_kind(kind);
-
-        builder
-            .build(&root)
-            .with_context(|| format!("error while building executor from {}", root.display()))?;
+        let loader = self.get_loader(kind);
 
         let executor_with_metadata = loader
             .load_from_src(&root)
@@ -111,7 +118,7 @@ impl FileSystemResolver {
     }
 }
 
-impl ExecutorResolver for FileSystemResolver {
+impl ExecutorResolver for FileSystemResolver<'_> {
     fn resolve(&self, url: &Url) -> Result<ExecutorResolution> {
         let root = self
             .get_canonical_root_path(url)
@@ -140,7 +147,7 @@ impl ExecutorResolver for FileSystemResolver {
 
         let update = match self.options.rebuild() {
             RebuildStrategy::OnChanges if merged_state.changes.is_empty() => {
-                let loader = loader_for_executor_kind(state.kind);
+                let loader = self.get_loader(state.kind);
                 ExecutorUpdate {
                     executor: loader.load_from_metadata(&state.metadata)?,
                     new_state: Some(to_value(State {

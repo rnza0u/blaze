@@ -1,15 +1,42 @@
 use std::path::Path;
 
-use blaze_common::{error::Result, value::Value};
-use serde::Serialize;
+use blaze_common::{
+    error::Result,
+    value::Value,
+};
+use serde::{Deserialize, Serialize};
 
 use crate::{
     executors::{
         bridge::{bridge_executor, BridgeProcessParams},
-        ExecutorContext,
+        Executor, ExecutorContext
     },
     system::env::Env,
 };
+
+use super::package::NodeExecutorPackage;
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct NodeExecutor {
+    #[serde(flatten)]
+    package: NodeExecutorPackage,
+}
+
+impl NodeExecutor {
+    pub fn new(package: NodeExecutorPackage) -> Self {
+        Self { package }
+    }
+}
+
+impl Executor for NodeExecutor {
+    fn execute(&self, context: ExecutorContext, options: Value) -> Result<()> {
+        execute_node_bridge(NodeBridgeParameters {
+            module: &self.package.root.join(self.package.path.as_path()),
+            context,
+            options: &options,
+        })
+    }
+}
 
 #[derive(Serialize)]
 pub struct NodeBridgeMetadata<'a> {

@@ -3,7 +3,7 @@ use url::Url;
 
 use super::{
     git_common::{GitHeadlessResolver, GitResolverContext},
-    resolver::{ExecutorResolver, ExecutorSource},
+    resolver::{ExecutorResolution, ExecutorResolver, ExecutorUpdate},
 };
 
 pub struct GitResolver<'a> {
@@ -19,11 +19,11 @@ impl<'a> GitResolver<'a> {
 }
 
 impl ExecutorResolver for GitResolver<'_> {
-    fn resolve(&self, url: &Url) -> Result<ExecutorSource> {
+    fn resolve(&self, url: &Url) -> Result<ExecutorResolution> {
         self.delegate.resolve(url)
     }
 
-    fn update(&self, url: &Url, state: &Value) -> Result<Option<ExecutorSource>> {
+    fn update(&self, url: &Url, state: &Value) -> Result<ExecutorUpdate> {
         self.delegate.update(url, state)
     }
 }

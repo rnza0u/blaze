@@ -4,30 +4,23 @@ use url::Url;
 use crate::executors::DynExecutor;
 
 use super::{
-    file_system::FileSystemResolver, git::GitResolver, git_common::GitResolverContext,
-    http_git::GitOverHttpResolver, loader::LoadMetadata, ssh_git::GitOverSshResolver,
+    file_system::{FileSystemResolver, FileSystemResolverContext},
+    git::GitResolver,
+    git_common::GitResolverContext,
+    http_git::GitOverHttpResolver,
+    ssh_git::GitOverSshResolver,
     CustomResolutionContext,
 };
 
 pub struct ExecutorResolution {
     pub executor: DynExecutor,
-    pub state: Value
+    pub state: Value,
 }
 
 pub struct ExecutorUpdate {
     pub executor: DynExecutor,
     pub new_state: Option<Value>,
-    pub updated: bool
-}
-
-pub struct ExecutorResolution {
-    pub state: Value,
-    pub executor: DynExecutor
-}
-
-pub struct ExecutorUpdate {
-    pub state: Option<Value>,
-    pub executor: DynExecutor
+    pub updated: bool,
 }
 
 pub trait ExecutorResolver {
@@ -46,9 +39,12 @@ pub fn resolver_for_location<'a>(
     };
 
     match location {
-        Location::LocalFileSystem { options } => {
-            Box::new(FileSystemResolver::new(context.workspace.root(), options))
-        }
+        Location::LocalFileSystem { options } => Box::new(FileSystemResolver::new(
+            options,
+            FileSystemResolverContext {
+                workspace: &context.workspace,
+            },
+        )),
         Location::Git { options } => Box::new(GitResolver::new(options, git_context())),
         Location::GitOverHttp {
             transport,

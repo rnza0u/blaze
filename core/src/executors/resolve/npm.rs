@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use blaze_common::{error::Result, executor::NpmOptions, logger::Logger, value::Value, workspace::Workspace};
 use url::Url;
 
-use super::resolver::{ExecutorResolver, ExecutorSource};
+use super::resolver::{ExecutorResolution, ExecutorResolver, ExecutorUpdate};
 
 const PACKAGE_LOCATION: &str = ".blaze/npm";
 
@@ -32,11 +32,11 @@ impl <'a> NpmResolver<'a> {
 }
 
 impl ExecutorResolver for NpmResolver<'_> {
-    fn resolve(&self, _url: &Url) -> Result<ExecutorSource> {
+    fn resolve(&self, _url: &Url) -> Result<ExecutorResolution> {
         todo!()
     }
 
-    fn update(&self, _url: &Url, _state: &Value) -> Result<Option<ExecutorSource>> {
+    fn update(&self, _url: &Url, _state: &Value) -> Result<ExecutorUpdate> {
         todo!()
     }
 }
