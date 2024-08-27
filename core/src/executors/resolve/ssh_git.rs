@@ -7,7 +7,9 @@ use git2::{CertificateCheckStatus, Cred};
 use url::Url;
 
 use super::{
-    git_common::{GitHeadlessResolver, GitResolverContext}, resolver::{ExecutorUpdate, ExecutorResolution}, ExecutorResolver
+    git_common::{GitHeadlessResolver, GitResolverContext},
+    resolver::{ExecutorResolution, ExecutorUpdate},
+    ExecutorResolver,
 };
 
 pub struct GitOverSshResolver<'a> {

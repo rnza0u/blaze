@@ -55,7 +55,7 @@ fn touch() {
             ]
         })),
         |root| {
-            run_and_check_result(&root, true);
+            run_and_check_result(root, true);
 
             let created_file = std::fs::metadata(root.join("project/test"))
                 .expect("could not read test file metadata");
@@ -100,7 +100,7 @@ fn detached_fifo() {
             "shell": "sh"
         })),
         |root| {
-            run_and_check_result(&root, true);
+            run_and_check_result(root, true);
 
             assert_eq!(
                 b"Hello world!",
@@ -120,7 +120,7 @@ fn command_failure() {
                 }
             ]
         })),
-        |root| run_and_check_result(&root, false),
+        |root| run_and_check_result(root, false),
     );
 }
 
@@ -135,7 +135,7 @@ fn ignore_failure() {
                 }
             ]
         })),
-        |root| run_and_check_result(&root, true),
+        |root| run_and_check_result(root, true),
     );
 }
 
@@ -157,7 +157,7 @@ fn force_exit() {
             ]
         })),
         |root| {
-            run_and_check_result(&root, false);
+            run_and_check_result(root, false);
             assert!(
                 SystemTime::now().duration_since(start).unwrap().as_secs() < 30,
                 "sleep process should have been killed by the main process before exiting"
@@ -178,7 +178,7 @@ fn restart() {
                 }
             ]
         })),
-        |root| run_and_check_result(&root, true),
+        |root| run_and_check_result(root, true),
     );
 }
 
@@ -204,7 +204,7 @@ fn with_env() {
             "shell": "sh"
         })),
         |root| {
-            run_and_check_result(&root, true);
+            run_and_check_result(root, true);
             let output = std::fs::read_to_string(root.join("project/test.txt"))
                 .expect("could not read test output");
             assert_eq!("Hello world!", output);
@@ -242,7 +242,7 @@ fn default_env() {
             "shell": "sh"
         })),
         |root| {
-            run_and_check_result(&root, true);
+            run_and_check_result(root, true);
             let test_file =
                 File::open(root.join("project/test.txt")).expect("could not open test file");
             let results = BufReader::new(test_file)
@@ -257,12 +257,9 @@ fn default_env() {
 
             let test_var = |expected_name: &str, expected_value: &str| {
                 assert!(
-                    results
-                        .iter()
-                        .find(|(name, value)| {
-                            name.as_str() == expected_name && value.as_str() == expected_value
-                        })
-                        .is_some(),
+                    results.iter().any(|(name, value)| {
+                        name.as_str() == expected_name && value.as_str() == expected_value
+                    }),
                     "{expected_name} does not have value {expected_value}"
                 );
             };

@@ -54,11 +54,11 @@ impl Executions {
     ) {
         let graph = self.result.as_ref().expect("run error");
 
-        Self::check_nodes(&targets.into_iter().collect::<Vec<_>>()[..], &graph);
+        Self::check_nodes(&targets.into_iter().collect::<Vec<_>>()[..], graph);
     }
 
-    fn check_nodes<'a>(
-        expected_targets: &[(&'a str, ExpectedExecution)],
+    fn check_nodes(
+        expected_targets: &[(&str, ExpectedExecution)],
         execution_graph: &ExecutedGraph<ExecutionDetails>,
     ) {
         assert_eq!(

@@ -106,7 +106,6 @@ fn run_parallel_targets_infinite() {
             let executions = Executions::from_run_result(results);
 
             let target_names = (0..6)
-                .into_iter()
                 .map(|i| {
                     format!(
                         "{}-{}:parallel",
@@ -117,9 +116,7 @@ fn run_parallel_targets_infinite() {
                 .collect::<Vec<_>>();
 
             executions.assert_targets(
-                (0..6)
-                    .into_iter()
-                    .map(|i| (target_names[i].as_str(), ExpectedExecution::success())),
+                (0..6).map(|i| (target_names[i].as_str(), ExpectedExecution::success())),
             );
         },
     );

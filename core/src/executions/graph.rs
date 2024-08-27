@@ -230,10 +230,7 @@ impl ExecutionGraph {
                             .map(|(double, _)| double.as_str())
                             .collect::<Vec<_>>();
                         chain.push(double.as_str());
-                        bail!(
-                            "circular dependency detected ({})",
-                            chain.join(" <=> ")
-                        )
+                        bail!("circular dependency detected ({})", chain.join(" <=> "))
                     }
 
                     if let Some((ancestor_double, dependency_accessor)) = ancestors.last().cloned()
@@ -247,7 +244,7 @@ impl ExecutionGraph {
 
                     if dependency_graph.contains_key(&double) {
                         continue;
-                    }   
+                    }
 
                     let target_execution = Arc::new(target_execution);
 
@@ -279,7 +276,7 @@ impl ExecutionGraph {
                                 dependency_index: i,
                             },
                         ));
-                        
+
                         resolutions.push_back(DependenciesResolution {
                             selection: dependency.projects().cloned().map(|selector| {
                                 Selection::from_source(SelectorSource::Provided(selector))

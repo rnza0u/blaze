@@ -1,10 +1,16 @@
 use std::path::Path;
 
 use anyhow::Context;
-use blaze_common::{error::Result, value::{to_value, Value}};
+use blaze_common::{
+    error::Result,
+    value::{to_value, Value},
+};
 use serde::Deserialize;
 
-use crate::executors::{loader::{ExecutorLoader, ExecutorWithMetadata}, DynExecutor};
+use crate::executors::{
+    loader::{ExecutorLoader, ExecutorWithMetadata},
+    DynExecutor,
+};
 
 use super::{executor::NodeExecutor, package::NodeExecutorPackage};
 
@@ -20,7 +26,8 @@ impl ExecutorLoader for LocalNodeExecutorLoader {
             )
         })?;
 
-        package.build()
+        package
+            .build()
             .with_context(|| format!("failed to build node executor at {}", root.display()))?;
 
         let executor = Box::new(NodeExecutor::new(package));

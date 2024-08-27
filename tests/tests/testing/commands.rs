@@ -20,12 +20,9 @@ pub fn cmd<C: AsRef<str>>(command: C) {
     if !std::process::Command::new(SHELL)
         .args(get_shell_args(command.as_ref()))
         .spawn()
-        .expect(&format!("process creation error ({})", command.as_ref()))
+        .unwrap_or_else(|_| panic!("process creation error ({})", command.as_ref()))
         .wait()
-        .expect(&format!(
-            "could not wait for process ({})",
-            command.as_ref()
-        ))
+        .unwrap_or_else(|_| panic!("could not wait for process ({})", command.as_ref()))
         .success()
     {
         panic!("command exited with failure ({})", command.as_ref());

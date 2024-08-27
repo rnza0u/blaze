@@ -37,7 +37,7 @@ local workspaceDependencies = ['common'];
                     },
                     {
                         program: 'cargo',
-                        arguments: ['clippy', '--no-deps'] + (if blaze.vars.lint.fix then ['--fix'] else [])
+                        arguments: ['clippy', '--no-deps'] + (if blaze.vars.lint.fix then ['--fix', '--allow-dirty'] else [])
                     }
                 ]
             },

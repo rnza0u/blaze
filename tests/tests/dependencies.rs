@@ -63,7 +63,7 @@ fn three_levels() {
                     }),
                 ),
                 (
-                    "project-d".into(),
+                    "project-d",
                     json!({
                         "targets": {
                             "build": {}

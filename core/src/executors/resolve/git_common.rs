@@ -28,7 +28,7 @@ struct State {
     repository_path: PathBuf,
     src_path: PathBuf,
     metadata: Value,
-    kind: ExecutorKind
+    kind: ExecutorKind,
 }
 
 pub struct GitHeadlessResolver<'a> {
@@ -75,11 +75,13 @@ impl<'a> GitHeadlessResolver<'a> {
 
     fn get_loader(&self, kind: ExecutorKind) -> Box<dyn ExecutorLoader> {
         let strategy = match kind {
-            ExecutorKind::Node =>  ExecutorLoadStrategy::NodeLocal,
-            ExecutorKind::Rust => ExecutorLoadStrategy::RustLocal
+            ExecutorKind::Node => ExecutorLoadStrategy::NodeLocal,
+            ExecutorKind::Rust => ExecutorLoadStrategy::RustLocal,
         };
 
-        strategy.get_loader(LoaderContext { workspace: &self.context.workspace })
+        strategy.get_loader(LoaderContext {
+            workspace: self.context.workspace,
+        })
     }
 
     fn get_src_path(&self, repository_path: &Path) -> PathBuf {
@@ -94,12 +96,12 @@ impl<'a> GitHeadlessResolver<'a> {
         let kind = if let Some(kind) = self.git_options.kind() {
             kind
         } else {
-            infer_local_executor_type(&src_path)?
+            infer_local_executor_type(src_path)?
         };
 
         let loader = self.get_loader(kind);
 
-        Ok((loader.load_from_src(&src_path)?, kind))
+        Ok((loader.load_from_src(src_path)?, kind))
     }
 }
 
@@ -124,7 +126,8 @@ impl ExecutorResolver for GitHeadlessResolver<'_> {
 
         let repository = repo_builder.clone(url.as_ref(), &repository_path)?;
 
-        self.context.logger
+        self.context
+            .logger
             .debug(format!("cloned {} to {}", url, repository_path.display()));
 
         if let Some(checkout) = &self.git_options.checkout() {
@@ -155,10 +158,8 @@ impl ExecutorResolver for GitHeadlessResolver<'_> {
 
         let src_path = self.get_src_path(&repository_path);
 
-        let (
-            ExecutorWithMetadata { executor, metadata },
-            kind,
-        ) = self.build_and_load(&repository_path)?;
+        let (ExecutorWithMetadata { executor, metadata }, kind) =
+            self.build_and_load(&repository_path)?;
 
         Ok(ExecutorResolution {
             executor,
@@ -177,10 +178,10 @@ impl ExecutorResolver for GitHeadlessResolver<'_> {
 
         if !self.git_options.pull() {
             let loader = self.get_loader(state.kind);
-            return Ok(ExecutorUpdate { 
-                executor: loader.load_from_metadata(&state.metadata)?, 
-                new_state: None, 
-                updated: false 
+            return Ok(ExecutorUpdate {
+                executor: loader.load_from_metadata(&state.metadata)?,
+                new_state: None,
+                updated: false,
             });
         }
 
@@ -205,7 +206,8 @@ impl ExecutorResolver for GitHeadlessResolver<'_> {
 
         remote.fetch(&refspecs, Some(&mut fetch_options), None)?;
 
-        self.context.logger
+        self.context
+            .logger
             .debug(format!("fetched refspecs {:?} for {}", refspecs, url));
 
         let fetch_head = repository.find_reference("FETCH_HEAD")?;
@@ -221,13 +223,14 @@ impl ExecutorResolver for GitHeadlessResolver<'_> {
             .ok_or_else(|| anyhow!("could not resolve commit id for HEAD"))?;
 
         if fetch_head_commit == head_commit {
-            self.context.logger
-                .debug(format!("{url} fetch head commit has not changed ({fetch_head_commit})"));
+            self.context.logger.debug(format!(
+                "{url} fetch head commit has not changed ({fetch_head_commit})"
+            ));
             let loader = self.get_loader(state.kind);
-            return Ok(ExecutorUpdate { 
-                executor: loader.load_from_metadata(&state.metadata)?, 
-                new_state: None, 
-                updated: false 
+            return Ok(ExecutorUpdate {
+                executor: loader.load_from_metadata(&state.metadata)?,
+                new_state: None,
+                updated: false,
             });
         }
 
@@ -247,10 +250,7 @@ impl ExecutorResolver for GitHeadlessResolver<'_> {
 
         let src_path = self.get_src_path(&state.repository_path);
 
-        let (
-            ExecutorWithMetadata { executor, metadata },
-            kind,
-        ) =  self.build_and_load(&src_path)?;
+        let (ExecutorWithMetadata { executor, metadata }, kind) = self.build_and_load(&src_path)?;
 
         Ok(ExecutorUpdate {
             executor,
@@ -260,7 +260,7 @@ impl ExecutorResolver for GitHeadlessResolver<'_> {
                 repository_path: state.repository_path,
                 src_path,
             })?),
-            updated: true
+            updated: true,
         })
     }
 }

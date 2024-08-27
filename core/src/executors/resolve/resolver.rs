@@ -42,7 +42,7 @@ pub fn resolver_for_location<'a>(
         Location::LocalFileSystem { options } => Box::new(FileSystemResolver::new(
             options,
             FileSystemResolverContext {
-                workspace: &context.workspace,
+                workspace: context.workspace,
             },
         )),
         Location::Git { options } => Box::new(GitResolver::new(options, git_context())),

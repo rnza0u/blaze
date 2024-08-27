@@ -1,16 +1,14 @@
 use std::path::Path;
 
-use blaze_common::{
-    error::Result, value::Value, workspace::Workspace
-};
+use blaze_common::{error::Result, value::Value, workspace::Workspace};
 
 use crate::executors::{
-    node::loaders::LocalNodeExecutorLoader, rust::loaders::LocalRustExecutorLoader, DynExecutor
+    node::loaders::LocalNodeExecutorLoader, rust::loaders::LocalRustExecutorLoader, DynExecutor,
 };
 
 pub struct ExecutorWithMetadata {
     pub executor: DynExecutor,
-    pub metadata: Value
+    pub metadata: Value,
 }
 
 pub trait ExecutorLoader {
@@ -20,7 +18,7 @@ pub trait ExecutorLoader {
 }
 
 pub struct LoaderContext<'a> {
-    pub workspace: &'a Workspace
+    pub workspace: &'a Workspace,
 }
 
 #[allow(unused)]
@@ -36,7 +34,7 @@ impl ExecutorLoadStrategy {
         match self {
             Self::NodeLocal => Box::new(LocalNodeExecutorLoader),
             Self::RustLocal => Box::new(LocalRustExecutorLoader::new(context.workspace.root())),
-            _ => todo!()
+            _ => todo!(),
         }
     }
 }

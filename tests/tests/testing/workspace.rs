@@ -69,7 +69,7 @@ pub fn with_test_folder<F: FnOnce(PathBuf) + UnwindSafe>(
 
 pub const FIXTURES_DIR: &str = "tests/fixtures";
 
-pub fn with_test_workspace<F: FnOnce(&Path) -> () + UnwindSafe>(
+pub fn with_test_workspace<F: FnOnce(&Path) + UnwindSafe>(
     config: TestWorkspaceConfiguration,
     test_routine: F,
 ) {

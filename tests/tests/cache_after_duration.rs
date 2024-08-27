@@ -47,7 +47,7 @@ fn after_duration() {
         |root| {
             let run_cached_target = || -> Executions {
                 let results = run(
-                    &root,
+                    root,
                     RunOptions::new("build").with_selector_source(SelectorSource::Provided(
                         ProjectSelector::array(["project-name"]),
                     )),

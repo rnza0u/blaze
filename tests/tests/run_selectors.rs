@@ -57,7 +57,7 @@ fn setup() -> TestWorkspaceConfiguration {
 fn array() {
     with_test_workspace(setup(), |root| {
         run_and_verify_selected_projects(
-            &root,
+            root,
             Some(SelectorSource::Provided(ProjectSelector::array([
                 "project-1",
                 "project-12",
@@ -72,7 +72,7 @@ fn array() {
 fn array_with_non_existing() {
     with_test_workspace(setup(), |root| {
         let result = run(
-            &root,
+            root,
             RunOptions::new("dummy").with_selector_source(SelectorSource::Provided(
                 ProjectSelector::array(["project-1", "project-12", "project-56", "does-not-exist"]),
             )),
@@ -86,7 +86,7 @@ fn array_with_non_existing() {
 #[test]
 fn default() {
     with_test_workspace(setup(), |root| {
-        run_and_verify_selected_projects(&root, None, ["project-15", "project-25", "project-35"])
+        run_and_verify_selected_projects(root, None, ["project-15", "project-25", "project-35"])
     })
 }
 
@@ -94,7 +94,7 @@ fn default() {
 fn simple_include() {
     with_test_workspace(setup(), |root| {
         run_and_verify_selected_projects(
-            &root,
+            root,
             Some(SelectorSource::Provided(ProjectSelector::include_exclude(
                 ["^project-(1|6|10)$"],
                 [],
@@ -108,7 +108,7 @@ fn simple_include() {
 fn include_exclude() {
     with_test_workspace(setup(), |root| {
         run_and_verify_selected_projects(
-            &root,
+            root,
             Some(SelectorSource::Provided(ProjectSelector::include_exclude(
                 ["^project-1.*"],
                 ["project-12", "project-13", "project-14", "project-15"],

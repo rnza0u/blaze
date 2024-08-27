@@ -52,7 +52,7 @@ fn single_input_file() {
         |root| {
             let run_cached_target = || -> Executions {
                 let results = run(
-                    &root,
+                    root,
                     RunOptions::new("target-name").with_selector_source(SelectorSource::Provided(
                         ProjectSelector::array(["project-name"]),
                     )),
@@ -141,7 +141,7 @@ fn exclude_input_files() {
         |root| {
             let run_cached_target = || -> Executions {
                 let results = run(
-                    &root,
+                    root,
                     RunOptions::new("target-name").with_selector_source(SelectorSource::Provided(
                         ProjectSelector::array(["project-name"]),
                     )),

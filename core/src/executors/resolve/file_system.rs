@@ -97,7 +97,7 @@ impl<'a> FileSystemResolver<'a> {
         };
 
         strategy.get_loader(LoaderContext {
-            workspace: &self.context.workspace,
+            workspace: self.context.workspace,
         })
     }
 
@@ -105,13 +105,13 @@ impl<'a> FileSystemResolver<'a> {
         let kind = if let Some(kind) = self.options.kind() {
             kind
         } else {
-            infer_local_executor_type(&root)?
+            infer_local_executor_type(root)?
         };
 
         let loader = self.get_loader(kind);
 
         let executor_with_metadata = loader
-            .load_from_src(&root)
+            .load_from_src(root)
             .with_context(|| format!("could not load executor {}", root.display()))?;
 
         Ok((executor_with_metadata, kind))

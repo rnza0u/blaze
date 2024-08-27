@@ -1,15 +1,12 @@
 use std::path::Path;
 
-use blaze_common::{
-    error::Result,
-    value::Value,
-};
+use blaze_common::{error::Result, value::Value};
 use serde::{Deserialize, Serialize};
 
 use crate::{
     executors::{
         bridge::{bridge_executor, BridgeProcessParams},
-        Executor, ExecutorContext
+        Executor, ExecutorContext,
     },
     system::env::Env,
 };

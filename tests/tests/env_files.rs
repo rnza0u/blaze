@@ -43,7 +43,7 @@ fn env_files() {
         ),
         |root| {
             let results = run(
-                &root,
+                root,
                 RunOptions::new("target").with_selector_source(SelectorSource::Provided(
                     ProjectSelector::array(["project"]),
                 )),

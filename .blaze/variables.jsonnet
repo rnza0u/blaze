@@ -14,6 +14,9 @@
         }
     },
     include: [
-        '{{ root }}/user-variables.jsonnet'
+        { 
+            path: '{{ root }}/user-variables.jsonnet', 
+            optional: true 
+        }
     ]
 }
