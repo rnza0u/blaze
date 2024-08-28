@@ -40,8 +40,8 @@ local testTargets = {
                     + ['--', '--nocapture'],
                     environment: LocalEnv(targets[name])
                     + (if useCross then { 
-                        BLAZE_ROOT: blaze.root + '/blaze',
-                        CROSS_CONFIG: blaze.root + '/blaze/Cross.toml' 
+                        BLAZE_ROOT: blaze.root,
+                        CROSS_CONFIG: blaze.root + '/Cross.toml' 
                     } else {})
                 },
             ]
