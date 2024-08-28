@@ -81,7 +81,7 @@ local blaze = std.extVar('blaze');
             executor: {
                 url: 'https://github.com/rnza0u/blaze-executors.git',
                 format: 'Git',
-                path: 'npm-check-version'
+                path: 'npm-version-check'
             },
             options: {
                 version: blaze.vars.publish.version

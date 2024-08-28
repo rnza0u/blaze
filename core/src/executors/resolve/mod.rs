@@ -4,6 +4,7 @@ pub mod git_common;
 pub mod http_git;
 pub mod kinds;
 pub mod loader;
+#[allow(dead_code)]
 pub mod npm;
 pub mod resolver;
 pub mod ssh_git;

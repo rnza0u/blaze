@@ -140,7 +140,7 @@ pub fn run<R: AsRef<Path>>(
             executor_references.len(),
             executor_references
                 .iter()
-                .map(|url| url.to_string())
+                .map(|reference| reference.to_string())
                 .collect::<Vec<_>>()
         ));
 

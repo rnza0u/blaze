@@ -48,7 +48,7 @@ local ci = {
   name: 'CI pipeline',
   steps: [
     Step({
-        name: 'Restore cache',
+        name: 'restore cache',
         commands: ['restore-cache'],
         environment: cacheEnv,
         volumes: cacheVolumes,
@@ -60,13 +60,13 @@ local ci = {
         }
     }),
     Step({
-        name: 'Check',
+        name: 'check',
         commands: [
             'blaze run --target lint --all'
         ]
     }),
     Step({
-        name: 'Build',
+        name: 'build',
         commands: [
             'blaze run cli:build-release',
             'blaze run --projects website,downloads --target build',
@@ -77,7 +77,7 @@ local ci = {
         }
     }),
     Step({
-        name: 'Test',
+        name: 'test',
         commands: [
             'blaze run tests:run-all'
         ],
@@ -87,7 +87,7 @@ local ci = {
         }
     }),
     Step({
-        name: 'Create cache',
+        name: 'create cache',
         environment: cacheEnv,
         commands: ['create-cache'],
         volumes: cacheVolumes,
@@ -125,7 +125,7 @@ local publish = {
     name: 'Publish pipeline',
     steps: [
         Step({
-            name: 'Setup',
+            name: 'setup',
             commands: [
                 'blaze run ci:docker-authenticate'
             ],
@@ -133,7 +133,7 @@ local publish = {
             volumes: dockerVolumes
         }),
         Step({
-            name: 'Deploy binaries',
+            name: 'deploy binaries',
             commands: [
                 'blaze run cli:deploy'
             ],
@@ -145,7 +145,7 @@ local publish = {
             ] + dockerVolumes
         }),
         Step({
-            name: 'Push tags',
+            name: 'push tags',
             commands: [
                 'blaze run cli:push-tags'
             ],
@@ -157,7 +157,7 @@ local publish = {
             ]
         }),
         Step({
-            name: 'Publish packages',
+            name: 'publish packages',
             commands: [
                 'blaze run --all --target publish'
             ],

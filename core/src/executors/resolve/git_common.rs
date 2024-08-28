@@ -158,8 +158,7 @@ impl ExecutorResolver for GitHeadlessResolver<'_> {
 
         let src_path = self.get_src_path(&repository_path);
 
-        let (ExecutorWithMetadata { executor, metadata }, kind) =
-            self.build_and_load(&repository_path)?;
+        let (ExecutorWithMetadata { executor, metadata }, kind) = self.build_and_load(&src_path)?;
 
         Ok(ExecutorResolution {
             executor,

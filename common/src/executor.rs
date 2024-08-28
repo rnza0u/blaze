@@ -40,7 +40,29 @@ impl Display for ExecutorReference {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Standard { url } => url.fmt(f),
-            Self::Custom { url, .. } => url.fmt(f),
+            Self::Custom { url, location } => {
+                let fmt_git_location = |url: &Url, options: &GitOptions| {
+                    let mut out = url.to_string();
+                    if let Some(path) = options.path() {
+                        out.push_str(&format!("[/{}]", path.display()));
+                    }
+                    if let Some(checkout) = options.checkout() {
+                        out.push_str(&format!("@{}", checkout));
+                    }
+                    out
+                };
+
+                match location {
+                    Location::Git {
+                        options: git_options,
+                    }
+                    | Location::GitOverHttp { git_options, .. }
+                    | Location::GitOverSsh { git_options, .. } => {
+                        write!(f, "{}", fmt_git_location(url, git_options))
+                    }
+                    _ => url.fmt(f),
+                }
+            }
         }
     }
 }
@@ -407,6 +429,16 @@ pub enum GitCheckout {
     Branch { branch: String },
     Tag { tag: String },
     Revision { rev: String },
+}
+
+impl Display for GitCheckout {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::Branch { branch } => branch.as_str(),
+            Self::Revision { rev } => rev.as_str(),
+            Self::Tag { tag } => tag.as_str(),
+        })
+    }
 }
 
 unit_enum_from_str!(HttpFormatIdentifier);

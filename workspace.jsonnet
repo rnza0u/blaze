@@ -70,5 +70,9 @@
       description: 'Blaze downloads REST API',
       tags: ['rust', 'web']
     }
+  },
+  settings: {
+    logLevel: 'Debug',
+    parallelism: 'All'
   }
 }

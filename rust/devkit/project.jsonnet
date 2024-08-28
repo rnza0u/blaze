@@ -64,7 +64,7 @@ local workspaceDependencies = ['common'];
             executor: {
                 url: 'https://github.com/rnza0u/blaze-executors.git',
                 format: 'Git',
-                path: 'cargo-check-version'
+                path: 'cargo-version-check'
             },
             options: {
                 version: blaze.vars.publish.version,

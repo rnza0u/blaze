@@ -15,15 +15,13 @@ fi
 echo "Compiling Node devkit"
 cd "$root/node/devkit"
 npm install
-./node_modules/.bin/tsc
-$sudo npm link --install-links .
+npm run build
 
 echo "Compiling Node bridge"
 cd "$root/node/bridge"
-npm link @blaze-repo/node-devkit
 npm install
-./node_modules/.bin/tsc
-./node_modules/.bin/esbuild dist/main.js --bundle --outfile=dist/main.js --platform=node --minify --allow-overwrite=true --format=esm
+npm link ../devkit
+npm run build
 
 echo "Compiling JSON schemas"
 cd "$root/schemas"
@@ -35,4 +33,4 @@ echo "Compiling and installing Blaze CLI"
 cd $root
 BLAZE_NODE_BRIDGE_BUNDLE_PATH="$root/node/bridge/dist/main.js" \
     BLAZE_JSON_SCHEMAS_LOCATION="$root/schemas/schemas" \
-    cargo +nightly-2024-06-25 install -Z bindeps --path "$root/cli"
+    cargo +nightly install -Z bindeps --path "$root/cli"

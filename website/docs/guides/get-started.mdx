@@ -97,10 +97,10 @@ blaze version
           You can install your own binary <a target="_blank" href={`https://github.com/rnza0u/blaze.git`}>from the source code</a> using different methods.
         </p>
         
-        <p>You will need a Rust nightly toolchain (&gt;=2024-06-25). You can download it using <a href="https://rustup.rs"><code>rustup</code></a> :</p>
+        <p>You will need a Rust nightly toolchain. You can download it using <a href="https://rustup.rs"><code>rustup</code></a> :</p>
 
         <CodeBlock>
-          rustup install nightly-2024-06-25
+          rustup install nightly
         </CodeBlock>
 
         <Admonition type='info'>
@@ -120,7 +120,7 @@ blaze version
         <p>This method will compile all Rust code from source and fetch non-Rust code and assets from NPM.</p>
         
         <CodeBlock language='sh'> 
-          {`cargo +nightly-2024-06-25 install -Z bindeps blaze-cli@${version}`}
+          {`cargo +nightly install -Z bindeps blaze-cli@${version}`}
         </CodeBlock>
 
         <h3 style={{ fontSize: '1.25rem' }}>Second method (using a build script)</h3>

@@ -12,7 +12,7 @@ steps:
     CACHE_STORAGE: /var/lib/cache
   failure: ignore
   image: registry.rnzaou.me/ci:latest
-  name: Restore cache
+  name: restore cache
   pull: always
   volumes:
   - name: cache
@@ -24,13 +24,13 @@ steps:
 - commands:
   - blaze run --target lint --all
   image: registry.rnzaou.me/ci:latest
-  name: Check
+  name: check
   pull: always
 - commands:
-  - blaze run blaze-cli:build-release
-  - blaze run --projects blaze-website,blaze-downloads --target build
+  - blaze run cli:build-release
+  - blaze run --projects website,downloads --target build
   image: registry.rnzaou.me/ci:latest
-  name: Build
+  name: build
   pull: always
   volumes:
   - name: docker-socket
@@ -39,9 +39,9 @@ steps:
     branch:
     - master
 - commands:
-  - blaze run blaze-tests:run-all
+  - blaze run tests:run-all
   image: registry.rnzaou.me/ci:latest
-  name: Test
+  name: test
   pull: always
   volumes:
   - name: docker-socket
@@ -57,7 +57,7 @@ steps:
     CACHE_STORAGE: /var/lib/cache
   failure: ignore
   image: registry.rnzaou.me/ci:latest
-  name: Create cache
+  name: create cache
   pull: always
   volumes:
   - name: cache
@@ -91,15 +91,15 @@ steps:
     DOCKER_REGISTRY_USERNAME:
       from_secret: DOCKER_REGISTRY_USERNAME
   image: registry.rnzaou.me/ci:latest
-  name: Setup
+  name: setup
   pull: always
   volumes:
   - name: docker-socket
     path: /var/run/docker.sock
 - commands:
-  - blaze run blaze-cli:deploy
+  - blaze run cli:deploy
   image: registry.rnzaou.me/ci:latest
-  name: Deploy binaries
+  name: deploy binaries
   pull: always
   volumes:
   - name: builds
@@ -107,9 +107,9 @@ steps:
   - name: docker-socket
     path: /var/run/docker.sock
 - commands:
-  - blaze run blaze-cli:push-tags
+  - blaze run cli:push-tags
   image: registry.rnzaou.me/ci:latest
-  name: Push tags
+  name: push tags
   pull: always
   volumes:
   - name: ssh
@@ -122,7 +122,7 @@ steps:
     NPM_TOKEN:
       from_secret: NPM_TOKEN
   image: registry.rnzaou.me/ci:latest
-  name: Publish packages
+  name: publish packages
   pull: always
   volumes:
   - name: docker-socket
@@ -143,6 +143,6 @@ volumes:
   name: docker-socket
 ---
 kind: signature
-hmac: 311a4893c21761cbd2906e5709d0bc2db7349abd3d8de830502d698c5336d84d
+hmac: 01dceca8776ef8486bba316cd3fca97fbe4b077d746382195f85158f453f414d
 
 ...
