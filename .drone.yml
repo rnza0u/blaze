@@ -69,6 +69,7 @@ steps:
 trigger:
   event:
   - push
+  - custom
 type: docker
 volumes:
 - host:
@@ -143,6 +144,6 @@ volumes:
   name: docker-socket
 ---
 kind: signature
-hmac: 01dceca8776ef8486bba316cd3fca97fbe4b077d746382195f85158f453f414d
+hmac: 41746a29117426df90c80638a4c6f241c5930484c57536a57970172b5b5fb6ca
 
 ...

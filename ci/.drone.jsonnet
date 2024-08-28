@@ -114,7 +114,7 @@ local ci = {
     },
   ],
   trigger: {
-    event: ['push']
+    event: ['push', 'custom']
   },
   image_pull_secrets: ['DOCKER_REGISTRY_AUTHENTICATION_JSON'],
 };
