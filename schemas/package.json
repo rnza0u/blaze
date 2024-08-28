@@ -1,7 +1,7 @@
 {
   "name": "@blaze-repo/json-schemas",
   "homepage": "https://blaze-monorepo.dev",
-  "version": "0.2.11",
+  "version": "0.2.12",
   "repository": {
     "url": "git+https://github.com/rnza0u/blaze.git",
     "directory": "schemas"

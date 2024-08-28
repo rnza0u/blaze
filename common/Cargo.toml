@@ -4,7 +4,7 @@ description = "Blaze common shared types."
 repository = "https://github.com/rnza0u/blaze.git"
 homepage = "https://blaze-monorepo.dev"
 license = "MIT"
-version = "0.2.11"
+version = "0.2.12"
 edition = "2021"
 
 [lib]
