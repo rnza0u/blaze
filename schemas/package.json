@@ -25,12 +25,12 @@
   "devDependencies": {
     "@types/json-schema": "^7.0.15",
     "@types/node": "^20.11.17",
-    "eslint": "^9.9.0",
+    "eslint": "^9.9.1",
     "eslint-config-rnz-main": "^1.0.5",
     "eslint-config-rnz-node": "^1.0.5",
-    "typescript": "^5.5.2"
+    "typescript": "^5.5.4"
   },
   "dependencies": {
-    "@hyperjump/json-schema": "^1.7.2"
+    "@hyperjump/json-schema": "^1.9.8"
   }
 }
