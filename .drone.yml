@@ -40,6 +40,11 @@ steps:
     - master
 - commands:
   - blaze run --parallelism None tests:run-all
+  environment:
+    DOCKER_REGISTRY_PASSWORD:
+      from_secret: DOCKER_REGISTRY_PASSWORD
+    DOCKER_REGISTRY_USERNAME:
+      from_secret: DOCKER_REGISTRY_USERNAME
   image: registry.rnzaou.me/ci:latest
   name: test
   pull: always
@@ -85,20 +90,12 @@ kind: pipeline
 name: Publish pipeline
 steps:
 - commands:
-  - blaze run ci:docker-authenticate
+  - blaze run --parallelism None cli:deploy
   environment:
     DOCKER_REGISTRY_PASSWORD:
       from_secret: DOCKER_REGISTRY_PASSWORD
     DOCKER_REGISTRY_USERNAME:
       from_secret: DOCKER_REGISTRY_USERNAME
-  image: registry.rnzaou.me/ci:latest
-  name: setup
-  pull: always
-  volumes:
-  - name: docker-socket
-    path: /var/run/docker.sock
-- commands:
-  - blaze run --parallelism None cli:deploy
   image: registry.rnzaou.me/ci:latest
   name: deploy binaries
   pull: always
@@ -144,6 +141,6 @@ volumes:
   name: docker-socket
 ---
 kind: signature
-hmac: fcbb44ca52ff6683d4fa811e75ef75381a1f95cb3b2c177af51062a216dfc2b8
+hmac: 8e0bf722df9ad0c4dd17bdbf200476adf132e478bcb179119e2d90f75723fe2f
 
 ...

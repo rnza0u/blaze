@@ -81,6 +81,7 @@ local ci = {
         commands: [
             'blaze run --parallelism None tests:run-all'
         ],
+        environment: dockerCredentials,
         volumes: dockerVolumes,
         when: {
             branch: ['master']
@@ -125,18 +126,11 @@ local publish = {
     name: 'Publish pipeline',
     steps: [
         Step({
-            name: 'setup',
-            commands: [
-                'blaze run ci:docker-authenticate'
-            ],
-            environment: dockerCredentials,
-            volumes: dockerVolumes
-        }),
-        Step({
             name: 'deploy binaries',
             commands: [
                 'blaze run --parallelism None cli:deploy'
             ],
+            environment: dockerCredentials,
             volumes: [
                 {
                     name: 'builds',

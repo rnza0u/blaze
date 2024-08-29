@@ -44,7 +44,7 @@ local buildsByTarget = {
     },
     dependencies: [
       'source',
-    ]
+    ] + (if useCross then ['ci:docker-authenticate'] else [])
   }
   for name in std.objectFields(targets)
 };

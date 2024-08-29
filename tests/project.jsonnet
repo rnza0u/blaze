@@ -7,6 +7,7 @@ local workspaceDependencies = [{ project: 'core', crate: 'blaze-core' }];
 
 local testTargets = {
     ['run-' + name]: {
+        local useCross = targets[name].rustTriple != null,
         executor: 'std:commands',
         cache: {
             invalidateWhen: {
@@ -21,7 +22,6 @@ local testTargets = {
         options: {
             commands: [
                 {
-                    local useCross = targets[name].rustTriple != null,
                     program: if useCross then 'cross' else 'cargo',
                     arguments: [
                         '+nightly',
@@ -48,7 +48,7 @@ local testTargets = {
         },
         dependencies: [
             'source'
-        ]
+        ] + (if useCross then ['ci:docker-authenticate'] else [])
     } for name in std.objectFields(targets)
 };
 
