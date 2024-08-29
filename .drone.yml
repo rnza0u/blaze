@@ -39,12 +39,7 @@ steps:
     branch:
     - master
 - commands:
-  - blaze run --parallelism None tests:run-all
-  environment:
-    DOCKER_REGISTRY_PASSWORD:
-      from_secret: DOCKER_REGISTRY_PASSWORD
-    DOCKER_REGISTRY_USERNAME:
-      from_secret: DOCKER_REGISTRY_USERNAME
+  - blaze run --parallelism None tests:run-release
   image: registry.rnzaou.me/ci:latest
   name: test
   pull: always
@@ -141,6 +136,6 @@ volumes:
   name: docker-socket
 ---
 kind: signature
-hmac: 8e0bf722df9ad0c4dd17bdbf200476adf132e478bcb179119e2d90f75723fe2f
+hmac: 1fd8fa8fd27e63d5cc3cc4a4f76d844c2ff71dd59a6344b1d24c1e075cd7e916
 
 ...

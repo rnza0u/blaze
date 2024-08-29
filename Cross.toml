@@ -14,7 +14,7 @@ volumes = [
 
 [target.aarch64-apple-darwin]
 image = "registry.rnzaou.me/aarch64-apple-darwin-cross:latest"
-env = { passthrough = ["RANLIB=arm64e-apple-darwin21.4-ranlib"] }
+env = { passthrough = ["RANLIB=arm64-apple-darwin21.4-ranlib"] }
 pre-build = [
     "dpkg --add-architecture arm64", 
     "apt-get update && apt-get --assume-yes install libssl-dev:arm64"
@@ -22,4 +22,4 @@ pre-build = [
 
 [target.x86_64-apple-darwin]
 image = "registry.rnzaou.me/x86_64-apple-darwin-cross:latest"
-env = { passthrough = ["RANLIB=x86_64h-apple-darwin21.4-ranlib"] }
+env = { passthrough = ["RANLIB=x86_64-apple-darwin21.4-ranlib"] }

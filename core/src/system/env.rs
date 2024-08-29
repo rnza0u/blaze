@@ -32,6 +32,8 @@ impl Env {
     }
 
     pub fn load_dotenv_files(root: &Path) -> Result<()> {
+        let mut variables = HashMap::<String, String>::new();
+
         for path in [MAIN_ENV_FILE, USER_ENV_FILE]
             .into_iter()
             .map(|f| root.join(f))
@@ -40,12 +42,24 @@ impl Env {
                 .map(|m| m.is_file())
                 .map_err(|err| err.kind())
             {
-                Ok(true) => dotenv::from_path(&path).with_context(|| {
-                    format!("could not load dotenv file from {}", path.display())
-                })?,
+                Ok(true) => {
+                    for item in dotenvy::from_path_iter(&path).with_context(|| {
+                        format!("could not get variables from {}", path.display())
+                    })? {
+                        let (name, value) = item?;
+                        if Env::get_as_str(&name)?.is_some() {
+                            continue;
+                        }
+                        let _ = variables.insert(name, value);
+                    }
+                }
                 Ok(false) | Err(ErrorKind::NotFound) => continue,
                 Err(other_err) => bail!(other_err),
             }
+        }
+
+        for (name, value) in variables {
+            std::env::set_var(name, value);
         }
 
         Ok(())

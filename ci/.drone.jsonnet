@@ -79,9 +79,8 @@ local ci = {
     Step({
         name: 'test',
         commands: [
-            'blaze run --parallelism None tests:run-all'
+            'blaze run --parallelism None tests:run-release'
         ],
-        environment: dockerCredentials,
         volumes: dockerVolumes,
         when: {
             branch: ['master']
