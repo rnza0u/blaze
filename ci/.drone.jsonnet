@@ -79,7 +79,7 @@ local ci = {
     Step({
         name: 'test',
         commands: [
-            'blaze run tests:run-all'
+            'blaze run --parallelism None tests:run-all'
         ],
         volumes: dockerVolumes,
         when: {
@@ -135,7 +135,7 @@ local publish = {
         Step({
             name: 'deploy binaries',
             commands: [
-                'blaze run cli:deploy'
+                'blaze run --parallelism None cli:deploy'
             ],
             volumes: [
                 {
