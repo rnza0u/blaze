@@ -39,7 +39,7 @@ steps:
     branch:
     - master
 - commands:
-  - blaze run tests:run-all
+  - blaze run --parallelism None tests:run-all
   image: registry.rnzaou.me/ci:latest
   name: test
   pull: always
@@ -98,7 +98,7 @@ steps:
   - name: docker-socket
     path: /var/run/docker.sock
 - commands:
-  - blaze run cli:deploy
+  - blaze run --parallelism None cli:deploy
   image: registry.rnzaou.me/ci:latest
   name: deploy binaries
   pull: always
@@ -108,7 +108,7 @@ steps:
   - name: docker-socket
     path: /var/run/docker.sock
 - commands:
-  - blaze run cli:push-tags
+  - blaze run ci:push-tags
   image: registry.rnzaou.me/ci:latest
   name: push tags
   pull: always
@@ -144,6 +144,6 @@ volumes:
   name: docker-socket
 ---
 kind: signature
-hmac: 41746a29117426df90c80638a4c6f241c5930484c57536a57970172b5b5fb6ca
+hmac: fcbb44ca52ff6683d4fa811e75ef75381a1f95cb3b2c177af51062a216dfc2b8
 
 ...

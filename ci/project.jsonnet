@@ -35,6 +35,17 @@
             options: {
                 registry: 'registry.rnzaou.me'
             }
-        }
+        },
+        'push-tags': {
+            executor: {
+                url: 'https://github.com/rnza0u/blaze-executors.git',
+                path: 'push-tags',
+                format: 'Git'
+            },
+            options: {
+                dryRun: '{{ vars.publish.dryRun }}',
+                tags: ['{{ vars.publish.version }}'],
+            },
+        },
     }
 }

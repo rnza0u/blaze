@@ -131,17 +131,6 @@ local deploymentsByTarget = {
         },
       ],
     },
-    'push-tags': {
-      executor: {
-        url: 'https://github.com/rnza0u/blaze-executors.git',
-        path: 'push-tags',
-        format: 'Git'
-      },
-      options: {
-        dryRun: blaze.vars.publish.dryRun,
-        tags: [blaze.vars.publish.version],
-      },
-    },
     'check-version': {
       executor: {
         url: 'https://github.com/rnza0u/blaze-executors.git',

@@ -147,7 +147,7 @@ local publish = {
         Step({
             name: 'push tags',
             commands: [
-                'blaze run cli:push-tags'
+                'blaze run ci:push-tags'
             ],
             volumes: [
                 {
