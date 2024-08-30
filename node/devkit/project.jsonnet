@@ -9,7 +9,7 @@ local blaze = std.extVar('blaze');
                 commands: [
                     {
                         program: 'npm',
-                        arguments: ['ci']
+                        arguments: ['install']
                     }
                 ]
             },
