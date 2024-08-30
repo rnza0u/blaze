@@ -1,3 +1,5 @@
+local blaze = std.extVar('blaze');
+
 {
     targets: {
         'build-drone': {
@@ -43,7 +45,7 @@
                 format: 'Git'
             },
             options: {
-                dryRun: '{{ vars.publish.dryRun }}',
+                dryRun: blaze.vars.publish.dryRun,
                 tags: ['{{ vars.publish.version }}'],
             },
         },
