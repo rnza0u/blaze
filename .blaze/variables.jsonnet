@@ -4,7 +4,7 @@
             fix: false
         },
         publish: {
-            version: '0.2.12',
+            version: '0.2.13',
             dryRun: false
         },
         runArgs: ['version'], 
