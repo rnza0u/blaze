@@ -71,20 +71,14 @@ local ci = {
             'blaze run cli:build-release',
             'blaze run --projects website,downloads --target build',
         ],
-        volumes: dockerVolumes,
-        when: {
-            branch: ['master']
-        }
+        volumes: dockerVolumes
     }),
     Step({
         name: 'test',
         commands: [
-            'blaze run --parallelism None tests:run-release'
+            'blaze run tests:run-release'
         ],
-        volumes: dockerVolumes,
-        when: {
-            branch: ['master']
-        }
+        volumes: dockerVolumes
     }),
     Step({
         name: 'create cache',

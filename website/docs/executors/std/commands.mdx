@@ -90,7 +90,15 @@ You can provide arguments for the command using the `arguments` options.
 
 ```
 
-When you're using the command short form, the provided command string is split at every whitespace and the first substring will be treated as the `program` option, the rest of the array is set to be the `arguments` options.
+When you're using the command short form, the provided command string is split at every whitespace and the first substring will be treated as the `program` option, the rest of the array will be set as the `arguments` options.
+
+This behavior is applied only when the `shell` options is set to `false` (which is the default).
+
+:::warning
+
+Be aware that passing a string that contains shell-specific syntax can cause unwanted behavior if you use don't use the `shell` option.
+
+:::
 
 ## Using a shell
 
@@ -162,7 +170,7 @@ If, for some reason, Blaze cannot infer what shell type you need, you can specif
 }
 ```
 
-If you shell type is not supported, you can still call the shell program directly without the `shell` option.
+If your shell type is not supported, you can still call the shell program directly without the `shell` option.
 
 In fact, the `shell` option is a short syntax for doing so.
 

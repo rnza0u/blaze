@@ -1,6 +1,6 @@
 - [] better line:column debug for jsonnet
 - [] cargo/npm resolvers
-- [] compose mode specs
-- [] fix init bug not correctly adding entries to .gitignore
-- [] fix circular dependencies detection
+- [x] fix init bug not correctly adding entries to .gitignore
+- [x] fix circular dependencies detection
 - [] exclude for any selector
+- [x] fix shell mode for std:exec

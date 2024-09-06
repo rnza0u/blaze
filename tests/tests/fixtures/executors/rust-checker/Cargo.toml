@@ -13,3 +13,6 @@ crate-type = ["dylib", "rlib"]
 
 [dependencies]
 blaze-devkit = { path = "../../../../../rust/devkit" }
+
+[build-dependencies]
+rand = "0.8.5"

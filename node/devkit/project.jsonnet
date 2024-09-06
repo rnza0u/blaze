@@ -63,6 +63,21 @@ local blaze = std.extVar('blaze');
             },
             dependencies: ['source']
         },
+        'pre-publish-build': {
+            executor: 'std:commands',
+            options: {
+                commands: [
+                    {
+                        program: 'npm',
+                        arguments: ['ci']
+                    },
+                    {
+                        program: 'npm',
+                        arguments: ['run', 'build']
+                    }
+                ]
+            }
+        },
         publish: {
             executor: {
                 url: 'https://github.com/rnza0u/blaze-executors.git',
@@ -73,7 +88,7 @@ local blaze = std.extVar('blaze');
                 dryRun: blaze.vars.publish.dryRun
             },
             dependencies: [
-                'build',
+                'pre-publish-build',
                 'check-version'
             ]
         },

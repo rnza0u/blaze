@@ -35,20 +35,14 @@ steps:
   volumes:
   - name: docker-socket
     path: /var/run/docker.sock
-  when:
-    branch:
-    - master
 - commands:
-  - blaze run --parallelism None tests:run-release
+  - blaze run tests:run-release
   image: registry.rnzaou.me/ci:latest
   name: test
   pull: always
   volumes:
   - name: docker-socket
     path: /var/run/docker.sock
-  when:
-    branch:
-    - master
 - commands:
   - create-cache
   environment:
@@ -136,6 +130,6 @@ volumes:
   name: docker-socket
 ---
 kind: signature
-hmac: 1fd8fa8fd27e63d5cc3cc4a4f76d844c2ff71dd59a6344b1d24c1e075cd7e916
+hmac: ed28aa4a46fa7fae10e9a53446cf188fe0e076654b03cc74de077d73dcc28fce
 
 ...

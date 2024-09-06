@@ -7,8 +7,6 @@ const executor: Executor = (ctx, options) => {
 
     const chance = new Chance()
 
-    console.log('HELLO')
-
     // options check
     deepEqual(
         options, 

@@ -8,8 +8,7 @@ local blaze = std.extVar('blaze');
                 commands: [
                     {
                         program: 'npm',
-                        arguments: ['install'],
-                        onFailure: 'Ignore'
+                        arguments: ['install']
                     },
                     {
                         program: 'npm',
