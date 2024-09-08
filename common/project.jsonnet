@@ -37,21 +37,11 @@ local blaze = std.extVar('blaze');
             executor: {
                 url: 'https://github.com/rnza0u/blaze-executors.git',
                 path: 'cargo-publish',
-                format: 'Git'
+                format: 'Git',
+                pull: true
             },
             options: {
-                dryRun: blaze.vars.publish.dryRun
-            },
-            dependencies: ['check-version']
-        },
-        'check-version': {
-            executor: {
-                url: 'https://github.com/rnza0u/blaze-executors.git',
-                path: 'cargo-version-check',
-                format: 'Git'
-            },
-            options: {
-                version: blaze.vars.publish.version
+                releaseVersion: blaze.vars.publish.version
             }
         },
         clean: {

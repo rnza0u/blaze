@@ -63,44 +63,17 @@ local blaze = std.extVar('blaze');
             },
             dependencies: ['source']
         },
-        'pre-publish-build': {
-            executor: 'std:commands',
-            options: {
-                commands: [
-                    {
-                        program: 'npm',
-                        arguments: ['ci']
-                    },
-                    {
-                        program: 'npm',
-                        arguments: ['run', 'build']
-                    }
-                ]
-            }
-        },
         publish: {
             executor: {
                 url: 'https://github.com/rnza0u/blaze-executors.git',
                 format: 'Git',
-                path: 'npm-publish'
+                path: 'npm-publish',
+                pull: true
             },
             options: {
-                dryRun: blaze.vars.publish.dryRun
+                releaseVersion: blaze.vars.publish.version
             },
-            dependencies: [
-                'pre-publish-build',
-                'check-version'
-            ]
-        },
-        'check-version': {
-            executor: {
-                url: 'https://github.com/rnza0u/blaze-executors.git',
-                format: 'Git',
-                path: 'npm-version-check'
-            },
-            options: {
-                version: blaze.vars.publish.version
-            }
+            dependencies: ['build']
         },
         clean: {
             executor: 'std:commands',

@@ -119,6 +119,33 @@ local publish = {
     name: 'Publish pipeline',
     steps: [
         Step({
+            name: 'publish packages',
+            commands: [
+                'blaze run --all --target publish'
+            ],
+            environment: {
+                CARGO_TOKEN: {
+                    from_secret: 'CARGO_TOKEN'
+                },
+                NPM_TOKEN: {
+                    from_secret: 'NPM_TOKEN'
+                }
+            } + dockerCredentials,
+            volumes: dockerVolumes
+        }),
+        Step({
+            name: 'push release changes',
+            commands: [
+                'blaze run ci:push-release'
+            ],
+            volumes: [
+                {
+                    name: 'ssh',
+                    path: '/root/.ssh'
+                }
+            ]
+        }),
+        Step({
             name: 'deploy binaries',
             commands: [
                 'blaze run --parallelism None cli:deploy'
@@ -131,33 +158,6 @@ local publish = {
                 }
             ] + dockerVolumes
         }),
-        Step({
-            name: 'push tags',
-            commands: [
-                'blaze run ci:push-tags'
-            ],
-            volumes: [
-                {
-                    name: 'ssh',
-                    path: '/root/.ssh'
-                }
-            ]
-        }),
-        Step({
-            name: 'publish packages',
-            commands: [
-                'blaze run --all --target publish'
-            ],
-            environment: {
-                CARGO_TOKEN: {
-                    from_secret: 'CARGO_TOKEN'
-                },
-                NPM_TOKEN: {
-                    from_secret: 'NPM_TOKEN'
-                }
-            },
-            volumes: dockerVolumes
-        })
     ],
     volumes: [
         {

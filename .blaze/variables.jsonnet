@@ -4,14 +4,10 @@
             fix: false
         },
         publish: {
-            version: '0.2.13',
-            dryRun: false
+            version: '0.2.14'
         },
         runArgs: ['version'], 
-        tests: null,
-        rust: {
-            channel: 'nightly'
-        }
+        tests: null
     },
     include: [
         { 

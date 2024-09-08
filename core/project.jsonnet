@@ -67,30 +67,22 @@ local npmDependencies = [
       executor: {
         url: 'https://github.com/rnza0u/blaze-executors.git',
         path: 'cargo-publish',
-        format: 'Git'
+        format: 'Git',
+        pull: true
       },
       options: {
-        dryRun: blaze.vars.publish.dryRun
+        releaseVersion: blaze.vars.publish.version,
+        linkedDependencies: {
+          runtime: [dep.crate for dep in cargoDependencies],
+          build: [dep.crate for dep in cargoBuildDependencies]
+        }
       },
       dependencies: [
-        'check-version',
         {
           projects: [dep.project for dep in cargoDependencies + cargoBuildDependencies] + npmDependencies,
           target: 'publish'
         }
       ]
-    },
-    'check-version': {
-      executor: {
-        url: 'https://github.com/rnza0u/blaze-executors.git',
-        path: 'cargo-version-check',
-        format: 'Git'
-      },
-      options: {
-        version: blaze.vars.publish.version,
-        workspaceDependencies: [dep.crate for dep in cargoDependencies],
-        workspaceBuildDependencies: [dep.crate for dep in cargoBuildDependencies]
-      }
     },
     clean: {
       executor: 'std:commands',

@@ -67,30 +67,21 @@ local testTargets = {
             executor: {
                 url: 'https://github.com/rnza0u/blaze-executors.git',
                 path: 'cargo-publish',
-                format: 'Git'
+                format: 'Git',
+                pull: true
             },
             options: {
-                dryRun: blaze.vars.publish.dryRun,
-                channel: 'nightly'
+                releaseVersion: blaze.vars.publish.version,
+                linkedDependencies: {
+                    dev: [dep.crate for dep in workspaceDependencies]
+                }
             },
             dependencies: [
-                'check-version',
                 {
                     projects: [dep.project for dep in workspaceDependencies],
                     target: 'publish'
                 }
             ]
-        },
-        'check-version': {
-            executor: {
-                url: 'https://github.com/rnza0u/blaze-executors.git',
-                path: 'cargo-version-check',
-                format: 'Git'
-            },
-            options: {
-                version: blaze.vars.publish.version,
-                workspaceDevDependencies: [dep.crate for dep in workspaceDependencies]
-            }
         },
         run: {
             cache: {},
