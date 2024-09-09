@@ -217,7 +217,7 @@ local blaze = std.extVar('blaze');
                     }
                 ]
             },
-            dependencies: ['build-image']
+            dependencies: ['build-image', 'ci:docker-authenticate']
         },
         deploy: {
             executor: 'std:commands',
