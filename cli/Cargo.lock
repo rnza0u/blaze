@@ -198,7 +198,7 @@ dependencies = [
 
 [[package]]
 name = "blaze-common"
-version = "0.2.13"
+version = "0.2.14"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -212,7 +212,7 @@ dependencies = [
 
 [[package]]
 name = "blaze-core"
-version = "0.2.13"
+version = "0.2.14"
 dependencies = [
  "anyhow",
  "blaze-common",
@@ -254,7 +254,7 @@ dependencies = [
 
 [[package]]
 name = "blaze-devkit"
-version = "0.2.13"
+version = "0.2.14"
 dependencies = [
  "blaze-common",
  "hash-value",
@@ -263,7 +263,7 @@ dependencies = [
 
 [[package]]
 name = "blaze-rust-bridge"
-version = "0.2.13"
+version = "0.2.14"
 dependencies = [
  "anyhow",
  "blaze-common",
