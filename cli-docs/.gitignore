@@ -1,2 +1,4 @@
 target
 dist
+# Cargo.lock is ignored for this crate because this is just a local helper and it would cause unwanted errors on CI when publishing
+Cargo.lock
