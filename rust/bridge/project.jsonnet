@@ -55,7 +55,7 @@ local workspaceDependencies = [
                 pull: true
             },
             options: {
-                release: blaze.vars.publish.version,
+                releaseVersion: blaze.vars.publish.version,
                 linkedDependencies: {
                     runtime: [dep.crate for dep in workspaceDependencies]
                 }
