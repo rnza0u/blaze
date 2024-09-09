@@ -2,6 +2,8 @@
 
 A sidecar program that serves as a bridge between Blaze CLI and Rust custom executors.
 
+This crate is not part of Blaze public API.
+
 ## External documentation
 
 - [Blaze website](https://blaze-monorepo.dev)
