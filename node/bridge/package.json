@@ -5,7 +5,7 @@
     "url": "git+https://github.com/rnza0u/blaze.git",
     "directory": "node/bridge"
   },
-  "version": "0.2.13",
+  "version": "0.2.14",
   "description": "A bridge between Blaze and Node.js executors.",
   "main": "dist/main.js",
   "type": "module",
@@ -15,8 +15,8 @@
   "author": "Renaud N'zaou",
   "license": "MIT",
   "dependencies": {
-    "zod": "^3.22.4",
-    "@blaze-repo/node-devkit": "0.2.13"
+    "@blaze-repo/node-devkit": "^0.2.14",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/node": "^20.8.3",

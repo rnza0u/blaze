@@ -79,7 +79,7 @@ kind: pipeline
 name: Publish pipeline
 steps:
 - commands:
-  - blaze run --all --target publish
+  - blaze run --parallelism None --all --target publish
   environment:
     CARGO_TOKEN:
       from_secret: CARGO_TOKEN
@@ -134,6 +134,6 @@ volumes:
   name: docker-socket
 ---
 kind: signature
-hmac: 17286382f22ac17794c2c98f7702433db2970dca50494cfc6df0201d5806fa4f
+hmac: 850551cd6986ff349bbd41a74140b11b9c7832fa10e94fd5485d874baf8668b9
 
 ...

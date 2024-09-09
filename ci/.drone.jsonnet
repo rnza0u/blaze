@@ -121,7 +121,7 @@ local publish = {
         Step({
             name: 'publish packages',
             commands: [
-                'blaze run --all --target publish'
+                'blaze run --parallelism None --all --target publish'
             ],
             environment: {
                 CARGO_TOKEN: {
