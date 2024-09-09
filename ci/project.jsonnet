@@ -1,3 +1,5 @@
+local blaze = std.extVar('blaze');
+
 {
     targets: {
         'build-drone': {
@@ -30,21 +32,23 @@
             executor: {
                 url: 'https://github.com/rnza0u/blaze-executors.git',
                 path: 'docker-authenticate',
-                format: 'Git'
+                format: 'Git',
+                pull: true
             },
             options: {
                 registry: 'registry.rnzaou.me'
             }
         },
-        'push-tags': {
+        'push-release': {
             executor: {
                 url: 'https://github.com/rnza0u/blaze-executors.git',
                 path: 'push-tags',
-                format: 'Git'
+                format: 'Git',
+                pull: true
             },
             options: {
-                dryRun: '{{ vars.publish.dryRun }}',
-                tags: ['{{ vars.publish.version }}'],
+                pushRemote: 'git@github.com:rnza0u/blaze.git',
+                tags: [blaze.vars.publish.version],
             },
         },
     }

@@ -8,8 +8,7 @@ local blaze = std.extVar('blaze');
                 commands: [
                     {
                         program: 'npm',
-                        arguments: ['ci'],
-                        onFailure: 'Ignore'
+                        arguments: ['install']
                     },
                     {
                         program: 'npm',
@@ -80,48 +79,23 @@ local blaze = std.extVar('blaze');
                 ]
             }
         },
-        'pre-publish-build': {
-            executor: 'std:commands',
-            options: {
-                commands: [
-                    {
-                        program: 'npm',
-                        arguments: ['ci']
-                    },
-                    {
-                        program: 'npm',
-                        arguments: ['run', 'build']
-                    }
-                ]
-            },
-            dependencies: ['node-devkit:publish']
-        },
         publish: {
             executor: {
                 url: 'https://github.com/rnza0u/blaze-executors.git',
                 format: 'Git',
-                path: 'npm-publish'
+                path: 'npm-publish',
+                pull: true
             },
             options: {
-                dryRun: blaze.vars.publish.dryRun
+                releaseVersion: blaze.vars.publish.version,
+                linkedDependencies: {
+                    runtime: ['@blaze-repo/node-devkit']
+                }
             },
             dependencies: [
-                'pre-publish-build',
-                'check-version'
+                'build',
+                'node-devkit:publish'
             ]
-        },
-        'check-version': {
-            executor: {
-                url: 'https://github.com/rnza0u/blaze-executors.git',
-                format: 'Git',
-                path: 'npm-version-check'
-            },
-            options: {
-                version: blaze.vars.publish.version,
-                workspaceDependencies: [
-                    '@blaze-repo/node-devkit'
-                ]
-            }
         }
     }
 }

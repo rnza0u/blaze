@@ -9,7 +9,7 @@ use std::{
     time::Duration,
 };
 
-use anyhow::{bail, Context};
+use anyhow::{anyhow, Context};
 use blaze_common::{error::Result, unit_enum_deserialize, unit_enum_from_str};
 use serde::Deserialize;
 use strum_macros::{Display, EnumIter};
@@ -147,8 +147,10 @@ impl Command {
                     }
                 }
             }
-            (None, Argv::Line(_)) => {
-                bail!("raw string commands are only supported when using a shell.")
+            (None, Argv::Line(line)) => {
+                let mut split = line.split_whitespace();
+                let program = PathBuf::from(split.next().ok_or_else(|| anyhow!("command is empty"))?);
+                (program, split.map(str::to_owned).collect())
             }
         };
 

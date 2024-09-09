@@ -35,20 +35,14 @@ steps:
   volumes:
   - name: docker-socket
     path: /var/run/docker.sock
-  when:
-    branch:
-    - master
 - commands:
-  - blaze run --parallelism None tests:run-release
+  - blaze run tests:run-release
   image: registry.rnzaou.me/ci:latest
   name: test
   pull: always
   volumes:
   - name: docker-socket
     path: /var/run/docker.sock
-  when:
-    branch:
-    - master
 - commands:
   - create-cache
   environment:
@@ -85,6 +79,31 @@ kind: pipeline
 name: Publish pipeline
 steps:
 - commands:
+  - blaze run --all --target publish
+  environment:
+    CARGO_TOKEN:
+      from_secret: CARGO_TOKEN
+    DOCKER_REGISTRY_PASSWORD:
+      from_secret: DOCKER_REGISTRY_PASSWORD
+    DOCKER_REGISTRY_USERNAME:
+      from_secret: DOCKER_REGISTRY_USERNAME
+    NPM_TOKEN:
+      from_secret: NPM_TOKEN
+  image: registry.rnzaou.me/ci:latest
+  name: publish packages
+  pull: always
+  volumes:
+  - name: docker-socket
+    path: /var/run/docker.sock
+- commands:
+  - blaze run ci:push-release
+  image: registry.rnzaou.me/ci:latest
+  name: push release changes
+  pull: always
+  volumes:
+  - name: ssh
+    path: /root/.ssh
+- commands:
   - blaze run --parallelism None cli:deploy
   environment:
     DOCKER_REGISTRY_PASSWORD:
@@ -97,27 +116,6 @@ steps:
   volumes:
   - name: builds
     path: /var/lib/blaze/builds
-  - name: docker-socket
-    path: /var/run/docker.sock
-- commands:
-  - blaze run ci:push-tags
-  image: registry.rnzaou.me/ci:latest
-  name: push tags
-  pull: always
-  volumes:
-  - name: ssh
-    path: /root/.ssh
-- commands:
-  - blaze run --all --target publish
-  environment:
-    CARGO_TOKEN:
-      from_secret: CARGO_TOKEN
-    NPM_TOKEN:
-      from_secret: NPM_TOKEN
-  image: registry.rnzaou.me/ci:latest
-  name: publish packages
-  pull: always
-  volumes:
   - name: docker-socket
     path: /var/run/docker.sock
 trigger:
@@ -136,6 +134,6 @@ volumes:
   name: docker-socket
 ---
 kind: signature
-hmac: 1fd8fa8fd27e63d5cc3cc4a4f76d844c2ff71dd59a6344b1d24c1e075cd7e916
+hmac: 17286382f22ac17794c2c98f7702433db2970dca50494cfc6df0201d5806fa4f
 
 ...

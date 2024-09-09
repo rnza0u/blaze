@@ -54,7 +54,8 @@ local deploymentsByTarget = {
     executor: {
       url: 'https://github.com/rnza0u/blaze-executors.git',
       path: 'package-binaries',
-      format: 'Git'
+      format: 'Git',
+      pull: true
     },
     options: {
       binPath: targets[name].cli.outputPath + '/' + targets[name].cli.filename,
@@ -118,29 +119,21 @@ local deploymentsByTarget = {
       executor: {
         url: 'https://github.com/rnza0u/blaze-executors.git',
         path: 'cargo-publish',
+        pull: true,
         format: 'Git'
       },
       options: {
-        dryRun: blaze.vars.publish.dryRun
+        releaseVersion: blaze.vars.publish.version,
+        linkedDependencies: {
+          runtime: [dep.crate for dep in workspaceDependencies]
+        }
       },
       dependencies: [
-        'check-version',
         {
           projects: [dep.project for dep in workspaceDependencies],
           target: 'publish',
         },
       ],
-    },
-    'check-version': {
-      executor: {
-        url: 'https://github.com/rnza0u/blaze-executors.git',
-        path: 'cargo-version-check',
-        format: 'Git'
-      },
-      options: {
-        version: blaze.vars.publish.version,
-        workspaceDependencies: [dep.crate for dep in workspaceDependencies],
-      },
     },
     source: {
       cache: {

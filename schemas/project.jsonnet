@@ -8,7 +8,7 @@ local blaze = std.extVar('blaze');
                 commands: [
                     {
                         program: 'npm',
-                        arguments: ['ci']
+                        arguments: ['install']
                     }
                 ]
             },
@@ -95,22 +95,13 @@ local blaze = std.extVar('blaze');
             executor: {
                 url: 'https://github.com/rnza0u/blaze-executors.git',
                 path: 'npm-publish',
-                format: 'Git'
+                format: 'Git',
+                pull: true
             },
             options: {
-                dryRun: blaze.vars.publish.dryRun
+                releaseVersion: blaze.vars.publish.version
             },
-            dependencies: ['check-version', 'build']
-        },
-        'check-version': {
-            executor: {
-                url: 'https://github.com/rnza0u/blaze-executors.git',
-                path: 'npm-version-check',
-                format: 'Git'
-            },
-            options: {
-                version: blaze.vars.publish.version
-            }
+            dependencies: ['build']
         },
         clean: {
             executor: 'std:commands',

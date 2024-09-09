@@ -1,4 +1,5 @@
 fn main() {
+    // check if node is present or not
     println!("cargo::rustc-check-cfg=cfg(node)");
 
     match std::process::Command::new("node")

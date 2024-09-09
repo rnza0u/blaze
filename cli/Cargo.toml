@@ -27,7 +27,7 @@ strum_macros = "0.26"
 build-time = "0.1"
 # internal dependencies
 blaze-common = { path = "../common", version = "0.2.13" }
-blaze-core = { path = "../core", version = "0.2.13" }
+blaze-core = { version = "0.2.13", path = "../core" }
 
 [profile.release]
 strip = true

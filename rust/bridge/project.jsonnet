@@ -51,29 +51,21 @@ local workspaceDependencies = [
             executor: {
                 url: 'https://github.com/rnza0u/blaze-executors.git',
                 format: 'Git',
-                path: 'cargo-publish'
+                path: 'cargo-publish',
+                pull: true
             },
             options: {
-                dryRun: blaze.vars.publish.dryRun
+                release: blaze.vars.publish.version,
+                linkedDependencies: {
+                    runtime: [dep.crate for dep in workspaceDependencies]
+                }
             },
             dependencies: [
-                'check-version',
                 {
                     projects: [dep.project for dep in workspaceDependencies],
                     target: 'publish'
                 }
             ]
-        },
-        'check-version': {
-            executor: {
-                url: 'https://github.com/rnza0u/blaze-executors.git',
-                format: 'Git',
-                path: 'cargo-version-check'
-            },
-            options: {
-                version: blaze.vars.publish.version,
-                workspaceDependencies: [dep.crate for dep in workspaceDependencies]
-            }
         },
         clean: {
             executor: 'std:commands',

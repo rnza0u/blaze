@@ -1,6 +1,8 @@
 local blaze = std.extVar('blaze');
 
-local workspaceDependencies = ['common'];
+local workspaceDependencies = [
+    { project: 'common', crate: 'blaze-common' }
+];
 
 {
     targets: {
@@ -16,7 +18,7 @@ local workspaceDependencies = ['common'];
             },
             dependencies: [
                 {
-                    projects: workspaceDependencies,
+                    projects: [dep.project for dep in workspaceDependencies],
                     target: 'source'
                 }
             ]
@@ -47,29 +49,21 @@ local workspaceDependencies = ['common'];
             executor: {
                 url: 'https://github.com/rnza0u/blaze-executors.git',
                 format: 'Git',
-                path: 'cargo-publish'
+                path: 'cargo-publish',
+                pull: true
             },
             options: {
-                dryRun: blaze.vars.publish.dryRun
+                releaseVersion: blaze.vars.publish.version,
+                linkedDependencies: {
+                    runtime: [dep.crate for dep in workspaceDependencies]
+                }
             },
             dependencies: [
-                'check-version',
                 {
-                    projects: workspaceDependencies,
+                    projects: [dep.project for dep in workspaceDependencies],
                     target: 'publish'
                 }
             ]
-        },
-        'check-version': {
-            executor: {
-                url: 'https://github.com/rnza0u/blaze-executors.git',
-                format: 'Git',
-                path: 'cargo-version-check'
-            },
-            options: {
-                version: blaze.vars.publish.version,
-                workspaceDependencies: ['blaze-' + name for name in workspaceDependencies]
-            }
         },
         clean: {
             executor: 'std:commands',
