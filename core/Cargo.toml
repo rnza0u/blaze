@@ -4,7 +4,7 @@ description = "Blaze as a library."
 repository = "https://github.com/rnza0u/blaze.git"
 homepage = "https://blaze-monorepo.dev"
 license = "MIT"
-version = "0.2.13"
+version = "0.2.14"
 edition = "2021"
 
 [lib]
@@ -34,6 +34,7 @@ tabled = "0.15"
 serde_cbor = "0.11"
 fs4 = "0.8"
 dunce = "1.0"
+blaze-common= { version = "0.2.14", path = "../common" }
 
 [dependencies.git2]
 version = "0.19"
@@ -61,20 +62,16 @@ features = ["exp-destruct", "exp-object-iteration", "exp-null-coaelse"]
 version = "5.1.0"
 features = ["string_helpers", "script_helper"]
 
-[dependencies.blaze-common]
-version = "0.2.13"
-path = "../common"
-
 [build-dependencies]
 tar = "0.4"
 flate2 = "1.0"
 sha2 = "0.10"
 
 [build-dependencies.blaze-rust-bridge]
-version = "0.2.13"
-path = "../rust/bridge"
+version = "0.2.14"
 artifact = "bin"
 target = "target"
+path = "../rust/bridge"
 
 [build-dependencies.reqwest]
 version = "0.12"
