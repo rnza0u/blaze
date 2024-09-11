@@ -7,9 +7,9 @@ local blaze = std.extVar('blaze');
                 invalidateWhen: {
                     inputChanges: [
                         'src/**',
-                        'Cargo.toml',
-                        'Cargo.lock'
-                    ]
+                        'Cargo.toml'
+                    ],
+                    outputChanges: ['Cargo.lock']
                 }
             }
         },

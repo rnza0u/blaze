@@ -47,9 +47,9 @@ local npmDependencies = [
           inputChanges: [
             'src/**',
             'Cargo.toml',
-            'Cargo.lock',
             'build.rs'
-          ]
+          ],
+          outputChanges: ['Cargo.lock']
         }
       },
       dependencies: [
