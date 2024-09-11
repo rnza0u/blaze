@@ -76,12 +76,11 @@ If no -s (or --shell) option is provided, then this option will be ignored."
     shell_kind: Option<ShellKind>,
 
     #[arg(
-        short = 's',
         long = "shell",
         help = "The shell program to use.",
         long_help = "The shell program to use.
 A shell will always be used when spawning the command on each selected project. \
-If you want to use a different shell than the default one, you can pass a --shell, or -s option."
+If you want to use a different shell than the default one, you can pass this --shell option."
     )]
     shell: Option<PathBuf>,
 
