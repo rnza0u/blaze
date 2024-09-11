@@ -80,13 +80,8 @@ local deploymentsByTarget = {
             program: 'cargo',
             arguments: [
               'run',
-              '--',
-              'spawn',
-              '-a',
-              '--',
-              'echo',
-              '\\{{ project.root }}'
-            ],
+              '--'
+            ] + blaze.vars.runArgs,
             environment: LocalEnv(targets.dev),
           },
         ],
