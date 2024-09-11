@@ -74,6 +74,7 @@ where
     O: Write,
 {
     let globals = WorkspaceGlobals::new(root, global_options)?;
+    let workspace = globals.workspace_handle().inner();
     let project = globals
         .workspace_handle()
         .inner()
@@ -81,7 +82,7 @@ where
         .get(&options.name)
         .map(|reference| {
             ProjectHandle::from_root(
-                reference.path(),
+                workspace.root().join(reference.path()),
                 ProjectOptions {
                     name: &options.name,
                     deserialization_context: globals.deserialization_context(),

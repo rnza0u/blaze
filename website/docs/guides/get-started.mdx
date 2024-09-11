@@ -120,12 +120,12 @@ blaze version
         <p>This method will compile all Rust code from source and fetch non-Rust code and assets from NPM.</p>
         
         <CodeBlock language='sh'> 
-          {`cargo +nightly install -Z bindeps blaze-cli@${version}`}
+          {`cargo +nightly install -Z bindeps blaze-cli`}
         </CodeBlock>
 
         <h3 style={{ fontSize: '1.25rem' }}>Second method (using a build script)</h3>
 
-        <p>This method will build everything from scratch, including non-Rust code and assets.</p>
+        <p>This method will build everything from source code, including non-Rust code and assets.</p>
 
         <p>It requires <a href="https://nodejs.org">Node.js</a> (&gt;= 18.17) and NPM to be installed locally along the Rust toolchain. </p>
 
@@ -134,7 +134,7 @@ blaze version
         <CodeBlock language='sh'> 
           {
             [
-              `git clone --depth 1 --branch blaze-${version} https://github.com/rnza0u/blaze.git`,
+              `git clone --depth 1 --branch ${version} https://github.com/rnza0u/blaze.git`,
               './blaze/bootstrap.sh'
             ].join('\n')
           }
