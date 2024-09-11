@@ -145,7 +145,7 @@ pub fn spawn(
             let template_data = globals
                 .deserialization_context()
                 .template_data
-                .with_project(name.as_str(), reference.path())?;
+                .with_project(name.as_str(), &workspace.root().join(reference.path()))?;
             let interpolated_command = template_data.render_str(&options.command)?;
             Ok((
                 name.as_str(),

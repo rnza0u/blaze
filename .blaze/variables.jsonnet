@@ -4,7 +4,7 @@
             fix: false
         },
         publish: {
-            version: '0.2.14'
+            version: '0.2.15'
         },
         runArgs: ['version'], 
         tests: null
