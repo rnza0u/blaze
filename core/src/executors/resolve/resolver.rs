@@ -36,6 +36,7 @@ pub fn resolver_for_location<'a>(
     let git_context = || GitResolverContext {
         logger: context.logger,
         workspace: context.workspace,
+        save_in_workspace: context.cache.is_some()
     };
 
     match location {
@@ -52,7 +53,7 @@ pub fn resolver_for_location<'a>(
             authentication,
         } => Box::new(GitOverHttpResolver::new(
             git_options,
-            transport,
+            transport,  
             authentication,
             git_context(),
         )),
