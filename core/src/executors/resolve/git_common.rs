@@ -43,6 +43,7 @@ pub struct GitHeadlessResolver<'a> {
 pub struct GitResolverContext<'a> {
     pub workspace: &'a Workspace,
     pub logger: &'a Logger,
+    pub save_in_workspace: bool
 }
 
 impl<'a> GitHeadlessResolver<'a> {
@@ -54,7 +55,11 @@ impl<'a> GitHeadlessResolver<'a> {
     ) -> Self {
         Self {
             context,
-            repositories_root: context.workspace.root().join(REPOSITORIES_PATH),
+            repositories_root: if context.save_in_workspace {
+                context.workspace.root().join(REPOSITORIES_PATH)
+            } else {
+                std::env::temp_dir()
+            },
             remote_callbacks_customizer: Box::new(remote_callbacks_customizer),
             fetch_options_customizer: Box::new(fetch_options_customizer),
             git_options,

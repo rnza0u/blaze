@@ -13,9 +13,9 @@ local workspaceDependencies = [
                 invalidateWhen: {
                     inputChanges: [
                         'src/**', 
-                        'Cargo.toml', 
-                        'Cargo.lock'
-                    ]
+                        'Cargo.toml'
+                    ],
+                    outputChanges: ['Cargo.lock']
                 }
             },
             dependencies: [

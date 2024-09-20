@@ -140,9 +140,9 @@ local deploymentsByTarget = {
         invalidateWhen: {
           inputChanges: [
             'src/**',
-            'Cargo.toml',
-            'Cargo.lock'
-          ]
+            'Cargo.toml'
+          ],
+          outputChanges: ['Cargo.lock']
         }
       },
       dependencies: [dep.project + ':source' for dep in workspaceDependencies]
