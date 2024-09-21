@@ -4,11 +4,11 @@ description = "Rust devkit for the Blaze build system."
 repository = "https://github.com/rnza0u/blaze.git"
 homepage = "https://blaze-monorepo.dev"
 license = "MIT"
-version = "0.2.15"
+version = "0.2.16"
 edition = "2021"
 
 [dependencies]
-blaze-common = { version = "0.2.15", path = "../../common" }
+blaze-common = { version = "0.2.16", path = "../../common" }
 hash-value = { version = "1.0" }
 url = "2.3.1"
 
