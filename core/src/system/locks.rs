@@ -5,7 +5,7 @@ use std::{
 
 use anyhow::bail;
 use blaze_common::error::Result;
-use fs4::{lock_contended_error, FileExt};
+use fs4::{fs_std::FileExt, lock_contended_error};
 
 const LOCKS_PATH: &str = ".blaze/locks";
 const LOCKS_CLEANUP_LOCK_ID: u64 = 0;

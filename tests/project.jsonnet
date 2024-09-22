@@ -9,16 +9,6 @@ local testTargets = {
     ['run-' + name]: {
         local useCross = targets[name].rustTriple != null,
         executor: 'std:commands',
-        cache: {
-            invalidateWhen: {
-                inputChanges: [
-                    {
-                        pattern: 'tests/**',
-                        exclude: ['**/node_modules', '**/target']
-                    }
-                ]
-            }
-        },
         options: {
             commands: [
                 {
@@ -84,11 +74,9 @@ local testTargets = {
             ]
         },
         run: {
-            cache: {},
             dependencies: ['run-dev']
         },
         'run-all': {
-            cache: {},
             dependencies: ['run-' + target for target in finalTargets]
         },
         lint: {
