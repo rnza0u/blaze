@@ -4,6 +4,7 @@ use actix_cors::Cors;
 use actix_files::NamedFile;
 use actix_web::{get, middleware::Logger, web::Json, App, HttpRequest, HttpServer, Responder};
 use env_logger::Env;
+use error::StringError;
 use serde::Serialize;
 use versions::{Build, Platform, VersionEntry};
 
@@ -38,7 +39,7 @@ impl From<Vec<VersionEntry>> for VersionsResponse {
 
 #[get("/versions")]
 async fn versions_endpoint() -> Result<impl Responder> {
-    Ok(Json(VersionsResponse::from(list_versions()?)))
+    Ok(Json(VersionsResponse::from(list_versions().await?)))
 }
 
 #[derive(Serialize)]
@@ -53,18 +54,22 @@ impl From<HashMap<Platform, Build>> for BuildsResponse {
 #[get("/versions/{version}/builds")]
 async fn builds_endpoint(req: HttpRequest) -> Result<impl Responder> {
     let version_identifier = VersionIdentifier::from_str(req.match_info().get("version").unwrap())?;
-    Ok(Json(BuildsResponse::from(list_builds(
-        &version_identifier,
-    )?)))
+    Ok(Json(BuildsResponse::from(
+        list_builds(&version_identifier).await?,
+    )))
 }
 
 #[get("/versions/{version}/builds/{platform}/package")]
 async fn package_endpoint(req: HttpRequest) -> Result<NamedFile> {
     let version_identifier = VersionIdentifier::from_str(req.match_info().get("version").unwrap())?;
     let platform = Platform::from_str(req.match_info().get("platform").unwrap())?;
-    let download = get_package_download(&version_identifier, platform)?;
+    let download = get_package_download(&version_identifier, platform).await?;
     NamedFile::from_file(
-        download.file,
+        download.file.try_into_std().map_err(|_| {
+            Error::any(StringError::from(
+                "could not convert tokio file to std file",
+            ))
+        })?,
         format!("blaze_{}_{}.tar.gz", download.version, platform),
     )
     .map_err(Error::any)

@@ -5,6 +5,27 @@ use actix_web::{body::BoxBody, http::StatusCode, HttpResponse, ResponseError};
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug)]
+pub struct StringError {
+    message: String
+}
+
+impl From<&str> for StringError {
+    fn from(value: &str) -> Self {
+        Self {
+            message: value.to_owned()
+        }
+    }
+}
+
+impl Display for StringError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.message.fmt(f)
+    }
+}
+
+impl std::error::Error for StringError {}
+
+#[derive(Debug)]
 pub enum Error {
     Any(Box<dyn std::error::Error>),
     BadParams,
