@@ -7,27 +7,29 @@ const BUILD_STATE_LOADING = 'loading'
 const BUILD_STATE_LOADED = 'loaded'
 const BUILD_STATE_ERROR = 'error'
 
+const LATEST = 'latest'
+
 export default function Downloads() {
-    const [availableVersions, setAvailableVersions] = useState(['latest'])
+    const [availableVersions, setAvailableVersions] = useState([LATEST])
     const [selectedVersion, setSelectedVersion] = useState(availableVersions[0])
     const [builds, setBuilds] = useState({ state: BUILD_STATE_LOADING })
 
-    function updateBuilds() {
-        setBuilds({ state: 'loading' })
-        listBuilds(selectedVersion)
+    function updateBuilds(version) {
+        setBuilds({ state: BUILD_STATE_LOADING })
+        listBuilds(version)
             .then(builds => setBuilds({ state: BUILD_STATE_LOADED, items: builds }))
             .catch(error => setBuilds({ state: BUILD_STATE_ERROR, error }))
     }
 
     function updateVersions() {
         listVersions()
-            .then(versions => setAvailableVersions(['latest', ...versions]))
+            .then(versions => setAvailableVersions([LATEST, ...versions]))
             .catch(err => {
                 console.error(err)
             })
     }
 
-    useEffect(() => updateBuilds(), [])
+    useEffect(() => updateBuilds(LATEST), [])
     useEffect(() => updateVersions(), [])
 
     return <Layout
@@ -45,9 +47,8 @@ export default function Downloads() {
             <select id="version"
                 className='margin-bottom--md'
                 onChange={event => {
-                    console.log('onChange')
                     setSelectedVersion(event.target.value)
-                    updateBuilds()
+                    updateBuilds(event.target.value)
                 }}>
                 {availableVersions.map(version =>
                     <option key={version}
