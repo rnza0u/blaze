@@ -42,6 +42,8 @@ In most cases, NPM executors can be referenced using a simple URL.
 
 By default, the latest version for the package is fetched. You can set a custom version with the `version` parameter.
 
+You can use any version syntax that is supported by `npm install`.
+
 ```json
 {
     "executor": {
@@ -60,7 +62,7 @@ The following authentication modes are supported when resolving executors from N
 
 :::info
 
-By default, credentials from your global NPM configuration (`~/.npmrc`) will be used.
+By default, credentials from any global NPM configuration (for e.g, your `~/.npmrc` file) will be used.
 
 :::
 
@@ -100,3 +102,4 @@ Access token authentication can be done using the following configuration :
 Other configuration keys are :
 
 - `insecure`: when set to `true`, SSL/TLS certificate rejections will be ignored when connecting to the registry. Use only for debugging purpose.
+- `pull`: If you want to always pull a new version from the registry, set this value to `true`. This has no effect if you specified a fixed version.
