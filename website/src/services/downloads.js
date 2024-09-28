@@ -13,6 +13,7 @@ function downloadsServer(path) {
 }
 
 export function listBuilds(version) {
+    console.log('calling server')
     return fetch(downloadsServer(`/versions/${version}/builds`))
         .then(response => response.json())
 }

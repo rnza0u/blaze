@@ -13,6 +13,7 @@ export default function Downloads() {
     const [builds, setBuilds] = useState({ state: BUILD_STATE_LOADING })
 
     function updateBuilds() {
+        console.log(('updateBuilds'))
         setBuilds({ state: 'loading' })
         listBuilds(selectedVersion)
             .then(builds => setBuilds({ state: BUILD_STATE_LOADED, items: builds }))
@@ -27,9 +28,8 @@ export default function Downloads() {
             })
     }
 
-    useEffect(() => updateBuilds(), [selectedVersion, setBuilds])
-
-    useEffect(() => updateVersions(), [setAvailableVersions])
+    useEffect(() => updateBuilds(), [])
+    useEffect(() => updateVersions(), [])
 
     return <Layout
         title={'Downloads'}
@@ -46,7 +46,7 @@ export default function Downloads() {
             <select id="version"
                 className='margin-bottom--md'
                 onChange={event => {
-                    setBuilds({})
+                    console.log('onChange')
                     setSelectedVersion(event.target.value)
                     updateBuilds()
                 }}>
