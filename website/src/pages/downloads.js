@@ -13,7 +13,6 @@ export default function Downloads() {
     const [builds, setBuilds] = useState({ state: BUILD_STATE_LOADING })
 
     function updateBuilds() {
-        console.log(('updateBuilds'))
         setBuilds({ state: 'loading' })
         listBuilds(selectedVersion)
             .then(builds => setBuilds({ state: BUILD_STATE_LOADED, items: builds }))
