@@ -42,5 +42,6 @@ You can provide more options as well using this syntax :
 ```
 
 - `version` : The crate version string, same syntax as in `Cargo.toml`
+- `pull`: Always try pull a new version of the crate when resolving the executor. This has no effect if you specified a fixed version.
 - `token` : The token to use when authenticating to a custom registry.
 - `insecure` : When value is set to `true`, will allow non secure connections or certificate rejections when using TLS. Should be set only for debugging purposes.
