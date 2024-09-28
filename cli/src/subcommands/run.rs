@@ -90,7 +90,7 @@ When providing zero, then no dependencies will be resolved for each target.",
 }
 
 impl BlazeSubCommandExecution for RunCommand {
-    fn execute(&self, root: &Path, globals: GlobalOptions) -> Result<()> {
+    fn execute(self: Box<Self>, root: &Path, globals: GlobalOptions) -> Result<()> {
         let target = if let Some(double) = &self.double {
             &double.target
         } else if let Some(target) = &self.target {

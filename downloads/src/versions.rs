@@ -137,11 +137,10 @@ pub async fn list_builds(
                 },
             ))
         });
-    
+
     futures::stream::FuturesUnordered::from_iter(platform_futures)
         .try_collect()
         .await
-    
 }
 
 pub enum VersionIdentifier {

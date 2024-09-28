@@ -17,7 +17,7 @@ use crate::subcommand::BlazeSubCommandExecution;
 pub struct VersionCommand;
 
 impl BlazeSubCommandExecution for VersionCommand {
-    fn execute(&self, _root: &Path, _globals: GlobalOptions) -> Result<()> {
+    fn execute(self: Box<Self>, _root: &Path, _globals: GlobalOptions) -> Result<()> {
         println!(
             "{} v{}, built at: {}",
             crate_name!(),

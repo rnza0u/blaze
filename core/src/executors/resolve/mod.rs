@@ -281,21 +281,18 @@ pub fn get_executor_package_id(reference: &ExecutorReference) -> u64 {
                 Location::GitOverHttp {
                     transport,
                     git_options,
-                    authentication,
+                    ..
                 } => {
                     transport.headers().hash(&mut hasher);
                     git_options.checkout().hash(&mut hasher);
                     git_options.path().hash(&mut hasher);
-                    authentication.hash(&mut hasher);
                 }
                 Location::GitOverSsh {
                     git_options,
-                    authentication,
                     ..
                 } => {
                     git_options.checkout().hash(&mut hasher);
                     git_options.path().hash(&mut hasher);
-                    authentication.hash(&mut hasher);
                 }
                 Location::TarballOverHttp {
                     transport,
@@ -308,11 +305,9 @@ pub fn get_executor_package_id(reference: &ExecutorReference) -> u64 {
                 Location::LocalFileSystem { .. } => {}
                 Location::Npm { options } => {
                     options.version().hash(&mut hasher);
-                    options.token().hash(&mut hasher);
                 }
                 Location::Cargo { options } => {
                     options.version().hash(&mut hasher);
-                    options.token().hash(&mut hasher);
                 }
                 Location::Git { options } => {
                     options.checkout().hash(&mut hasher);

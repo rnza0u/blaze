@@ -95,12 +95,12 @@ If you want to use a different shell than the default one, you can pass this --s
 }
 
 impl BlazeSubCommandExecution for SpawnCommand {
-    fn execute(&self, root: &Path, global_options: GlobalOptions) -> Result<()> {
+    fn execute(self: Box<Self>, root: &Path, global_options: GlobalOptions) -> Result<()> {
         if self.workspace {
             let mut options = WorkspaceSpawnOptions::new(&self.command.join(" "));
 
-            if let Some(shell) = &self.shell {
-                options = options.shell(Shell::new(shell, self.shell_kind));
+            if let Some(program) = self.shell {
+                options = options.shell(Shell::new(&program, self.shell_kind));
             }
 
             if self.quiet {
@@ -112,7 +112,8 @@ impl BlazeSubCommandExecution for SpawnCommand {
             return Ok(());
         }
 
-        let mut options = SpawnOptions::new(&self.command.join(" "));
+        let command = self.command.join(" ");
+        let mut options = SpawnOptions::new(&command);
 
         if let Some(source) = self.selection.get_selector_source() {
             options = options.with_selector_source(source);

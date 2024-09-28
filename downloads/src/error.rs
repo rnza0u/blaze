@@ -6,13 +6,13 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug)]
 pub struct StringError {
-    message: String
+    message: String,
 }
 
 impl From<&str> for StringError {
     fn from(value: &str) -> Self {
         Self {
-            message: value.to_owned()
+            message: value.to_owned(),
         }
     }
 }

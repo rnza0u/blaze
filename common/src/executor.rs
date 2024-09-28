@@ -154,7 +154,7 @@ impl<'de> Deserialize<'de> for ExecutorReference {
                         options: CargoOptions::deserialize(&root).map_err(D::Error::custom)?,
                     },
                     invalid_scheme => {
-                        return Err(serde::de::Error::custom(&format!(
+                        return Err(serde::de::Error::custom(format!(
                             "invalid url scheme \"{invalid_scheme}\""
                         )))
                     }
@@ -684,13 +684,48 @@ impl CargoOptions {
 }
 
 #[derive(Deserialize, Serialize, Hash, Debug, PartialEq, Eq, Clone)]
+pub struct NpmUsernamePasswordAuthentication {
+    username: String,
+    password: String
+}
+
+
+impl NpmUsernamePasswordAuthentication {
+    pub fn username(&self) -> &str {
+        &self.username
+    }
+
+    pub fn password(&self) -> &str {
+        &self.password
+    }
+}
+
+#[derive(Deserialize, Serialize, Hash, Debug, PartialEq, Eq, Clone)]
+pub struct NpmTokenAuthentication {
+    token: String
+}
+
+impl NpmTokenAuthentication {
+    pub fn token(&self) -> &str {
+        &self.token
+    }
+}
+
+#[derive(Deserialize, Serialize, Hash, Debug, PartialEq, Eq, Clone)]
+#[serde(untagged)]
+pub enum NpmAuthentication {
+    UsernamePassword(NpmUsernamePasswordAuthentication),
+    Token(NpmTokenAuthentication)
+}
+
+#[derive(Deserialize, Serialize, Hash, Debug, PartialEq, Eq, Clone)]
 pub struct NpmOptions {
     #[serde(skip_serializing_if = "Option::is_none")]
     version: Option<String>,
     #[serde(default)]
     insecure: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
-    token: Option<String>,
+    authentication: Option<NpmAuthentication>,
 }
 
 impl NpmOptions {
@@ -702,7 +737,7 @@ impl NpmOptions {
         self.insecure
     }
 
-    pub fn token(&self) -> Option<&str> {
-        self.token.as_deref()
+    pub fn authentication(&self) -> Option<&NpmAuthentication> {
+        self.authentication.as_ref()
     }
 }

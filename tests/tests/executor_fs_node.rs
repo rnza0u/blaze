@@ -19,7 +19,9 @@ fn node_checker_fs() {
 
     let executor_root_str = executor_root.to_str().unwrap();
 
-    cmd(format!("cd {executor_root_str} && rm -rf node_modules package-lock.json dist build_hash"));
+    cmd(format!(
+        "cd {executor_root_str} && rm -rf node_modules package-lock.json dist build_hash"
+    ));
 
     let executor_url = format!("file://{executor_root_str}");
 
@@ -55,7 +57,6 @@ fn node_checker_fs() {
             [],
         ),
         |root| {
-
             let execute = || {
                 let results = run(
                     root,
@@ -64,13 +65,16 @@ fn node_checker_fs() {
                     )),
                     Default::default(),
                 );
-    
+
                 Executions::from_run_result(results)
                     .assert_targets([("project:target", ExpectedExecution::success())]);
             };
 
-            let read_build_hash = || std::fs::read_to_string(executor_root.join("build_hash")).expect("could not read build hash");
-            
+            let read_build_hash = || {
+                std::fs::read_to_string(executor_root.join("build_hash"))
+                    .expect("could not read build hash")
+            };
+
             execute();
 
             let build_hash = read_build_hash();

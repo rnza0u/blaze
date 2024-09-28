@@ -6,7 +6,6 @@ mod command;
 mod context;
 mod subcommand;
 mod subcommands;
-mod version;
 
 fn main() {
     if let Err(err) = CliContext::try_new().and_then(|ctx| Command::try_parse()?.execute(ctx)) {

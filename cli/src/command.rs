@@ -125,7 +125,7 @@ The option value must be the path to the custom variable file."
 }
 
 impl Command {
-    pub fn execute(&self, context: CliContext) -> Result<()> {
+    pub fn execute(self, context: CliContext) -> Result<()> {
         let mut variable_overrides = Vec::<VariablesOverride>::with_capacity(
             self.str_vars.as_ref().map(|v| v.len()).unwrap_or(0)
                 + if self.json_var.is_some() { 1 } else { 0 }
@@ -134,37 +134,37 @@ impl Command {
                 + self.var_files.as_ref().map(|v| v.len()).unwrap_or(0),
         );
 
-        if let Some(var_files) = &self.var_files {
-            variable_overrides.extend(var_files.iter().map(|path| VariablesOverride::File {
+        if let Some(var_files) = self.var_files {
+            variable_overrides.extend(var_files.into_iter().map(|path| VariablesOverride::File {
                 path: if path.is_absolute() {
-                    path.to_owned()
+                    path
                 } else {
                     context.cwd.join(path)
                 },
             }));
         }
 
-        if let Some(code) = &self.json_var {
+        if let Some(code) = self.json_var {
             variable_overrides.push(VariablesOverride::Code {
                 format: ConfigurationFileFormat::Json,
-                code: code.to_owned(),
+                code
             })
-        } else if let Some(code) = &self.yaml_var {
+        } else if let Some(code) = self.yaml_var {
             variable_overrides.push(VariablesOverride::Code {
                 format: ConfigurationFileFormat::Yaml,
-                code: code.to_owned(),
+                code
             })
-        } else if let Some(code) = &self.jsonnet_var {
+        } else if let Some(code) = self.jsonnet_var {
             variable_overrides.push(VariablesOverride::Code {
                 format: ConfigurationFileFormat::Jsonnet,
-                code: code.to_owned(),
+                code
             })
         }
 
-        if let Some(str_vars) = &self.str_vars {
-            variable_overrides.extend(str_vars.iter().map(|str_var| VariablesOverride::String {
+        if let Some(str_vars) = self.str_vars {
+            variable_overrides.extend(str_vars.into_iter().map(|str_var| VariablesOverride::String {
                 path: str_var.path.split('.').map(str::to_owned).collect(),
-                value: str_var.value.to_owned(),
+                value: str_var.value
             }));
         }
 
@@ -179,12 +179,12 @@ impl Command {
         }
 
         self.subcommand.execute(
-            match &self.root {
+            match self.root {
                 Some(dir) => {
                     if dir.is_relative() {
                         Cow::Owned(context.cwd.join(dir))
                     } else {
-                        Cow::Borrowed(dir.as_path())
+                        Cow::Owned(dir)
                     }
                 }
                 None => Cow::Borrowed(context.cwd.as_path()),

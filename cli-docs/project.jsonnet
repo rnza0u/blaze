@@ -52,7 +52,7 @@ local workspaceDependencies = [
                     },
                     {
                         program: 'cargo',
-                        arguments: ['clippy'],
+                        arguments: ['clippy', '--no-deps'] + (if blaze.vars.lint.fix then ['--fix', '--allow-dirty'] else []),
                         environment: LocalEnv(targets.dev)
                     }
                 ]

@@ -17,7 +17,7 @@ use crate::subcommands::{
 };
 
 pub trait BlazeSubCommandExecution: Debug {
-    fn execute(&self, root: &Path, globals: GlobalOptions) -> Result<()>;
+    fn execute(self: Box<Self>, root: &Path, globals: GlobalOptions) -> Result<()>;
 }
 
 type DynSubCommandExecution = Box<dyn BlazeSubCommandExecution>;
@@ -26,7 +26,7 @@ type DynSubCommandExecution = Box<dyn BlazeSubCommandExecution>;
 pub struct BlazeSubCommand(DynSubCommandExecution);
 
 impl BlazeSubCommand {
-    pub fn execute(&self, root: &Path, globals: GlobalOptions) -> Result<()> {
+    pub fn execute(self, root: &Path, globals: GlobalOptions) -> Result<()> {
         self.0.execute(root, globals)
     }
 }

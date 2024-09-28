@@ -43,7 +43,7 @@ pub struct GitHeadlessResolver<'a> {
 pub struct GitResolverContext<'a> {
     pub workspace: &'a Workspace,
     pub logger: &'a Logger,
-    pub save_in_workspace: bool
+    pub save_in_workspace: bool,
 }
 
 impl<'a> GitHeadlessResolver<'a> {

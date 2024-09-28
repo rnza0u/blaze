@@ -53,7 +53,7 @@ pub struct RmCacheCommand {
 }
 
 impl BlazeSubCommandExecution for RmCacheCommand {
-    fn execute(&self, root: &Path, global_options: GlobalOptions) -> Result<()> {
+    fn execute(self: Box<Self>, root: &Path, global_options: GlobalOptions) -> Result<()> {
         let mut options = RmExecutionCacheOptions::new(
             self.target
                 .as_deref()
@@ -67,8 +67,7 @@ impl BlazeSubCommandExecution for RmCacheCommand {
 
         if let Some(project) = self
             .double
-            .as_ref()
-            .and_then(|double| double.project.as_ref())
+            .and_then(|double| double.project)
         {
             options = options
                 .with_selector_source(SelectorSource::Provided(ProjectSelector::array([project])))

@@ -58,18 +58,18 @@ By default, the output format will be based on the rendered configuration file f
 }
 
 impl BlazeSubCommandExecution for RenderCommand {
-    fn execute(&self, root: &Path, global_options: GlobalOptions) -> Result<()> {
+    fn execute(self: Box<Self>, root: &Path, global_options: GlobalOptions) -> Result<()> {
         let output = RenderOutput {
             format: self.format,
             stream: std::io::stdout(),
         };
 
-        match &self.subcommand {
+        match self.subcommand {
             RenderSubcommand::Project { name } => {
                 render_project(
                     root,
                     RenderProjectOptions {
-                        name: name.to_owned(),
+                        name,
                         output,
                     },
                     global_options,
