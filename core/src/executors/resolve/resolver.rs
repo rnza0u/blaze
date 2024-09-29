@@ -65,9 +65,9 @@ pub fn resolver_for_location<'a>(
         Location::Npm { options } => Box::new(NpmResolver::new(
             options,
             NpmResolverContext {
-                logger: &context.logger,
+                logger: context.logger,
                 save_in_workspace: context.cache.is_some(),
-                workspace: &context.workspace
+                workspace: context.workspace
             }
         )),
         _ => todo!()

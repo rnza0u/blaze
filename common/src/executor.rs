@@ -723,12 +723,19 @@ pub struct NpmOptions {
     #[serde(skip_serializing_if = "Option::is_none")]
     version: Option<String>,
     #[serde(default)]
+    pull: bool,
+    #[serde(default)]
     insecure: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     authentication: Option<NpmAuthentication>,
 }
 
 impl NpmOptions {
+
+    pub fn pull(&self) -> bool {
+        self.pull
+    }
+
     pub fn version(&self) -> Option<&str> {
         self.version.as_deref()
     }

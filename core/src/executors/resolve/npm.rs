@@ -60,7 +60,7 @@ impl<'a> CustomNpmrcConfig<'a> {
         let mut config = CustomNpmrcConfig::new();
 
         if let Some(registry) = &registry {
-            config.registry(*registry);
+            config.registry(registry);
         }
 
         if options.insecure() {
@@ -248,9 +248,9 @@ impl ExecutorResolver for NpmResolver<'_> {
                     ..Default::default()
                 },
             )
-            .with_context(|| format!("could not spawn `npm install` command"))?
+            .context("could not spawn `npm install` command")?
             .wait()
-            .with_context(|| format!("could not wait for `npm install` command"))
+            .context("could not wait for `npm install` command")
         })??;
 
         if !install.success {
@@ -258,7 +258,7 @@ impl ExecutorResolver for NpmResolver<'_> {
         }
 
         let loader = ExecutorLoadStrategy::NodePackage.get_loader(LoaderContext {
-            workspace: &self.workspace,
+            workspace: self.workspace,
         });
 
         let executor_with_metadata = loader.load_from_src(&package_root)?;
@@ -299,7 +299,7 @@ impl ExecutorResolver for NpmResolver<'_> {
         let tag = Tag::new(package, registry);
 
         let loader = ExecutorLoadStrategy::NodePackage.get_loader(LoaderContext {
-            workspace: &self.workspace,
+            workspace: self.workspace,
         });
 
         if tag.is_fixed_version() || !self.options.pull() {
@@ -327,9 +327,9 @@ impl ExecutorResolver for NpmResolver<'_> {
                     ..Default::default()
                 },
             )
-            .with_context(|| format!("could not spawn `npm update` command"))?
+            .context("could not spawn `npm update` command")?
             .wait()
-            .with_context(|| format!("could not wait for `npm update` command"))
+            .context("could not wait for `npm update` command")
         })??;
 
         if !update.success {
