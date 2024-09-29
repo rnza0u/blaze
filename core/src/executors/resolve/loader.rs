@@ -3,7 +3,7 @@ use std::path::Path;
 use blaze_common::{error::Result, value::Value, workspace::Workspace};
 
 use crate::executors::{
-    node::loaders::LocalNodeExecutorLoader, rust::loaders::LocalRustExecutorLoader, DynExecutor,
+    node::loaders::{LocalNodeExecutorLoader, NpmPackageNodeExecutorLoader}, rust::loaders::LocalRustExecutorLoader, DynExecutor,
 };
 
 pub struct ExecutorWithMetadata {
@@ -34,6 +34,7 @@ impl ExecutorLoadStrategy {
         match self {
             Self::NodeLocal => Box::new(LocalNodeExecutorLoader),
             Self::RustLocal => Box::new(LocalRustExecutorLoader::new(context.workspace.root())),
+            Self::NodePackage => Box::new(NpmPackageNodeExecutorLoader),
             _ => todo!(),
         }
     }

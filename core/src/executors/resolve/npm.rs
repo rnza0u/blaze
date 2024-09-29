@@ -57,7 +57,7 @@ struct CustomNpmrcConfig<'a> {
 
 impl<'a> CustomNpmrcConfig<'a> {
     pub fn from_options_and_registry(options: &'a NpmOptions, registry: Option<&'a str>) -> Self {
-        let mut config = CustomNpmrcConfig::new();
+        let mut config = Self::new();
 
         if let Some(registry) = &registry {
             config.registry(registry);

@@ -39,6 +39,35 @@ impl ExecutorLoader for LocalNodeExecutorLoader {
     }
 
     fn load_from_metadata(&self, metadata: &Value) -> Result<DynExecutor> {
-        Ok(Box::new(NodeExecutor::deserialize(metadata)?))
+        load_from_metadata(metadata)
     }
+}
+
+pub struct NpmPackageNodeExecutorLoader;
+
+impl ExecutorLoader for NpmPackageNodeExecutorLoader {
+
+    fn load_from_src(&self, root: &Path) -> Result<ExecutorWithMetadata> {
+        let package = NodeExecutorPackage::from_root(root).with_context(|| {
+            format!(
+                "error while reading node executor metadata at {}",
+                root.display()
+            )
+        })?;
+
+        let executor = Box::new(NodeExecutor::new(package));
+
+        Ok(ExecutorWithMetadata {
+            metadata: to_value(&executor)?,
+            executor,
+        })
+    }
+
+    fn load_from_metadata(&self, metadata: &Value) -> Result<DynExecutor> {
+        load_from_metadata(metadata)
+    }
+}
+
+fn load_from_metadata(metadata: &Value) -> Result<DynExecutor> {
+    Ok(Box::new(NodeExecutor::deserialize(metadata)?))
 }
