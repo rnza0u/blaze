@@ -102,9 +102,9 @@ impl<'a> CustomNpmrcConfig<'a> {
         registry: Option<&str>,
     ) {
         let key = if let Some(registry) = registry {
-            Cow::Owned(format!("--//{registry}/:_authToken"))
+            Cow::Owned(format!("//{registry}/:_authToken"))
         } else {
-            Cow::Borrowed("--_authToken")
+            Cow::Borrowed("_authToken")
         };
         let var_name = self.create_auth_var(token_authentication.token());
         self.entries.insert(key, format!("${{{var_name}}}").into());
@@ -116,9 +116,9 @@ impl<'a> CustomNpmrcConfig<'a> {
         registry: Option<&str>,
     ) {
         let key = if let Some(registry) = registry {
-            Cow::Owned(format!("--//{registry}/:_auth"))
+            Cow::Owned(format!("//{registry}/:_auth"))
         } else {
-            Cow::Borrowed("--_auth")
+            Cow::Borrowed("_auth")
         };
         let base64_auth = base64::prelude::BASE64_STANDARD.encode(format!(
             "{}:{}",
