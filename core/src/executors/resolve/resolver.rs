@@ -4,12 +4,7 @@ use url::Url;
 use crate::executors::DynExecutor;
 
 use super::{
-    file_system::{FileSystemResolver, FileSystemResolverContext},
-    git::GitResolver,
-    git_common::GitResolverContext,
-    http_git::GitOverHttpResolver,
-    ssh_git::GitOverSshResolver,
-    CustomResolutionContext,
+    file_system::{FileSystemResolver, FileSystemResolverContext}, git::GitResolver, git_common::GitResolverContext, http_git::GitOverHttpResolver, npm::{NpmResolver, NpmResolverContext}, ssh_git::GitOverSshResolver, CustomResolutionContext
 };
 
 pub struct ExecutorResolution {
@@ -67,6 +62,14 @@ pub fn resolver_for_location<'a>(
             authentication,
             git_context(),
         )),
-        _ => todo!(),
+        Location::Npm { options } => Box::new(NpmResolver::new(
+            options,
+            NpmResolverContext {
+                logger: &context.logger,
+                save_in_workspace: context.cache.is_some(),
+                workspace: &context.workspace
+            }
+        )),
+        _ => todo!()
     }
 }
