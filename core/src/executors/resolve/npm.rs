@@ -232,8 +232,11 @@ impl ExecutorResolver for NpmResolver<'_> {
 
         let npmrc = CustomNpmrcConfig::from_options_and_registry(&self.options, registry);
 
+        let tag = Tag::new(package, self.options.version());
+        self.logger
+            .debug(format!("installing package {tag} to {package_root_str}"));
+
         let install = npmrc.use_config(|environment| {
-            let tag = Tag::new(package, self.options.version());
             npm(
                 [
                     "install",
@@ -257,13 +260,20 @@ impl ExecutorResolver for NpmResolver<'_> {
             bail!("`npm install` failed (code: {:?})", install.code);
         }
 
+        let package_json = PackageJson::from_package_root(&package_root)?;
+
+        self.logger.debug(format!(
+            "{url} was installed, version is at {}",
+            package_json.version
+        ));
+
         let loader = ExecutorLoadStrategy::NodePackage.get_loader(LoaderContext {
             workspace: self.workspace,
         });
 
+        self.logger
+            .debug(format!("loading executor from {package_root_str}"));
         let executor_with_metadata = loader.load_from_src(&package_root)?;
-
-        let package_json = PackageJson::from_package_root(&package_root)?;
 
         Ok(ExecutorResolution {
             executor: executor_with_metadata.executor,
@@ -278,8 +288,8 @@ impl ExecutorResolver for NpmResolver<'_> {
     fn update(&self, url: &Url, state: &Value) -> Result<ExecutorUpdate> {
         let mut state = State::deserialize(state)?;
 
-        let current_package_json =
-            PackageJson::from_package_root(&state.package_root).with_context(|| {
+        let current_package_json = PackageJson::from_package_root(&state.package_root)
+            .with_context(|| {
                 format!(
                     "could not read installed executor package.json file at {}",
                     state.package_root.display()
@@ -302,12 +312,22 @@ impl ExecutorResolver for NpmResolver<'_> {
             workspace: self.workspace,
         });
 
-        if tag.is_fixed_version() || !self.options.pull() {
-            return Ok(ExecutorUpdate {
-                executor: loader.load_from_metadata(&state.load_metadata)?,
-                new_state: None,
-                updated: false,
-            });
+        let no_update = || Ok(ExecutorUpdate {
+            executor: loader.load_from_metadata(&state.load_metadata)?,
+            new_state: None,
+            updated: false,
+        });
+
+        if tag.is_fixed_version() {
+            self.logger
+                .debug(format!("not updating {tag}, version is static"));
+            return no_update();
+        }
+
+        if !self.options.pull() {
+            self.logger
+                .debug(format!("not updating {tag}, `pull` option is unset"));
+            return no_update();
         }
 
         let npmrc = CustomNpmrcConfig::from_options_and_registry(&self.options, registry);
@@ -345,21 +365,27 @@ impl ExecutorResolver for NpmResolver<'_> {
             })?;
 
         if new_package_json.version == current_package_json.version {
-            return Ok(ExecutorUpdate {
-                executor: loader.load_from_metadata(&state.load_metadata)?,
-                new_state: None,
-                updated: false,
-            })
+            self.logger.debug(format!(
+                "version has not changed for {tag}, still at {}",
+                new_package_json.version
+            ));
+            return no_update();
         }
 
-        let ExecutorWithMetadata { executor, metadata } = loader.load_from_src(&state.package_root)?;
+        self.logger.debug(format!(
+            "reloading {tag}, new version was downloaded ({} => {})",
+            current_package_json.version, new_package_json.version
+        ));
+
+        let ExecutorWithMetadata { executor, metadata } =
+            loader.load_from_src(&state.package_root)?;
         state.package_version = new_package_json.version;
         state.load_metadata = metadata;
 
-        Ok(ExecutorUpdate { 
-            executor, 
-            new_state: Some(to_value(state)?), 
-            updated: true
+        Ok(ExecutorUpdate {
+            executor,
+            new_state: Some(to_value(state)?),
+            updated: true,
         })
     }
 }
