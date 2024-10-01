@@ -90,18 +90,8 @@ impl<'a> FileSystemResolver<'a> {
         MatchedFiles::try_new(root, self.options.watch().unwrap_or(&default))
     }
 
-    fn get_loader(&self, kind: ExecutorKind) -> Box<dyn ExecutorLoader> {
-        let strategy = match kind {
-            ExecutorKind::Node => ExecutorLoadStrategy::NodeLocal,
-            ExecutorKind::Rust => ExecutorLoadStrategy::RustLocal,
-        };
 
-        strategy.get_loader(LoaderContext {
-            workspace: self.context.workspace,
-        })
-    }
-
-    fn build_and_load(&self, root: &Path) -> Result<(ExecutorWithMetadata, ExecutorKind)> {
+    fn build(&self, root: &Path) -> Result<(ExecutorWithMetadata, ExecutorKind)> {
         let kind = if let Some(kind) = self.options.kind() {
             kind
         } else {
