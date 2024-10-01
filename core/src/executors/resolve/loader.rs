@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use blaze_common::{error::Result, value::Value, workspace::Workspace};
+use serde::{Deserialize, Serialize};
 
 use crate::executors::{
     node::loaders::{LocalNodeExecutorLoader, NpmPackageNodeExecutorLoader}, rust::loaders::LocalRustExecutorLoader, DynExecutor,
@@ -21,10 +22,9 @@ pub struct LoaderContext<'a> {
     pub workspace: &'a Workspace,
 }
 
-#[allow(unused)]
+#[derive(Serialize, Deserialize)]
 pub enum ExecutorLoadStrategy {
     RustLocal,
-    RustCrate,
     NodeLocal,
     NodePackage,
 }

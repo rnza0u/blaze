@@ -26,8 +26,8 @@ use super::{
 
 #[derive(Serialize, Deserialize)]
 pub struct State {
+    root: PathBuf,
     kind: ExecutorKind,
-    metadata: Value,
     files: MatchedFilesState,
 }
 
@@ -90,21 +90,22 @@ impl<'a> FileSystemResolver<'a> {
         MatchedFiles::try_new(root, self.options.watch().unwrap_or(&default))
     }
 
-
-    fn build(&self, root: &Path) -> Result<(ExecutorWithMetadata, ExecutorKind)> {
+    fn get_kind(&self, root: &Path) -> Result<ExecutorKind> {
         let kind = if let Some(kind) = self.options.kind() {
             kind
         } else {
             infer_local_executor_type(root)?
         };
+        Ok(kind)
+    }
 
-        let loader = self.get_loader(kind);
+    fn get_load_strategy(&self, kind: ExecutorKind) -> Result<(ExecutorWithMetadata, ExecutorKind)> {
+        let strategy = match kind {
+            ExecutorKind::Node => ExecutorLoadStrategy::NodeLocal,
+            ExecutorKind::Rust => ExecutorLoadStrategy::RustLocal
+        };
 
-        let executor_with_metadata = loader
-            .load_from_src(root)
-            .with_context(|| format!("could not load executor {}", root.display()))?;
-
-        Ok((executor_with_metadata, kind))
+        Ok(strategy)
     }
 }
 
@@ -114,14 +115,15 @@ impl ExecutorResolver for FileSystemResolver<'_> {
             .get_canonical_root_path(url)
             .with_context(|| format!("could not get canonical executor path from {url}"))?;
 
-        let (ExecutorWithMetadata { executor, metadata }, kind) = self.build_and_load(&root)?;
+        let kind = self.get_kind(&root)?;
 
         Ok(ExecutorResolution {
-            executor,
+            src: root.to_owned(),
+            load_strategy: self.get_load_strategy(kind),
             state: to_value(State {
+                root,
                 files: MatchedFilesState::from_files(self.get_matched_files(&root)?)?,
                 kind,
-                metadata,
             })?,
         })
     }
@@ -137,27 +139,26 @@ impl ExecutorResolver for FileSystemResolver<'_> {
 
         let update = match self.options.rebuild() {
             RebuildStrategy::OnChanges if merged_state.changes.is_empty() => {
-                let loader = self.get_loader(state.kind);
                 ExecutorUpdate {
-                    executor: loader.load_from_metadata(&state.metadata)?,
+                    load_strategy: self.get_load_strategy(state.kind),
                     new_state: Some(to_value(State {
                         files: merged_state.files_state,
                         kind: state.kind,
-                        metadata: state.metadata,
+                        root: root.to_owned()
                     })?),
+                    src: root,
                     updated: false,
                 }
             }
             _ => {
-                let (ExecutorWithMetadata { executor, metadata }, kind) =
-                    self.build_and_load(&root)?;
                 ExecutorUpdate {
-                    executor,
+                    load_strategy: self.get_load_strategy(self.get_kind(&root)),
                     new_state: Some(to_value(State {
                         kind,
                         files: merged_state.files_state,
-                        metadata,
+                        root: root.to_owned(),
                     })?),
+                    src: root,
                     updated: true,
                 }
             }

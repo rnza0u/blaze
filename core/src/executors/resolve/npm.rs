@@ -33,7 +33,6 @@ const PACKAGE_LOCATION: &str = ".blaze/npm";
 #[derive(Serialize, Deserialize)]
 struct State {
     package_root: PathBuf,
-    load_metadata: Value,
     package_version: String,
 }
 
@@ -263,24 +262,16 @@ impl ExecutorResolver for NpmResolver<'_> {
         let package_json = PackageJson::from_package_root(&package_root)?;
 
         self.logger.debug(format!(
-            "{url} was installed, version is at {}",
+            "{url} was installed in version {}",
             package_json.version
         ));
 
-        let loader = ExecutorLoadStrategy::NodePackage.get_loader(LoaderContext {
-            workspace: self.workspace,
-        });
-
-        self.logger
-            .debug(format!("loading executor from {package_root_str}"));
-        let executor_with_metadata = loader.load_from_src(&package_root)?;
-
         Ok(ExecutorResolution {
-            executor: executor_with_metadata.executor,
+            src: package_root.to_owned(),
+            load_strategy: ExecutorLoadStrategy::NodePackage,
             state: to_value(State {
                 package_root,
-                package_version: package_json.version,
-                load_metadata: executor_with_metadata.metadata,
+                package_version: package_json.version
             })?,
         })
     }
@@ -308,19 +299,17 @@ impl ExecutorResolver for NpmResolver<'_> {
         let registry = url.host_str();
         let tag = Tag::new(package, registry);
 
-        let loader = ExecutorLoadStrategy::NodePackage.get_loader(LoaderContext {
-            workspace: self.workspace,
-        });
-
+        let package_root_ref = &state.package_root;
         let no_update = || Ok(ExecutorUpdate {
-            executor: loader.load_from_metadata(&state.load_metadata)?,
+            load_strategy: ExecutorLoadStrategy::NodePackage,
+            src: package_root_ref.to_owned(),
             new_state: None,
             updated: false,
         });
 
         if tag.is_fixed_version() {
             self.logger
-                .debug(format!("not updating {tag}, version is static"));
+                .debug(format!("not updating {tag}, version is fixed"));
             return no_update();
         }
 
@@ -373,19 +362,17 @@ impl ExecutorResolver for NpmResolver<'_> {
         }
 
         self.logger.debug(format!(
-            "reloading {tag}, new version was downloaded ({} => {})",
+            "new version was installed for {tag} ({} => {})",
             current_package_json.version, new_package_json.version
         ));
 
-        let ExecutorWithMetadata { executor, metadata } =
-            loader.load_from_src(&state.package_root)?;
         state.package_version = new_package_json.version;
-        state.load_metadata = metadata;
 
         Ok(ExecutorUpdate {
-            executor,
-            new_state: Some(to_value(state)?),
+            load_strategy: ExecutorLoadStrategy::NodePackage,
+            new_state: Some(to_value(&state)?),
             updated: true,
+            src: state.package_root
         })
     }
 }
