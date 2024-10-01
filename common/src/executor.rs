@@ -659,10 +659,15 @@ pub enum SshAuthentication {
     },
 }
 
+
+
 #[derive(Deserialize, Serialize, Hash, Debug, PartialEq, Eq, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct CargoOptions {
     #[serde(skip_serializing_if = "Option::is_none")]
     version: Option<String>,
+    #[serde(default)]
+    no_ssl: bool,
     #[serde(default)]
     insecure: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -676,6 +681,10 @@ impl CargoOptions {
 
     pub fn insecure(&self) -> bool {
         self.insecure
+    }
+
+    pub fn no_ssl(&self) -> bool {
+        self.no_ssl
     }
 
     pub fn token(&self) -> Option<&str> {

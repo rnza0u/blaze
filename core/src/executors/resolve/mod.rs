@@ -1,10 +1,10 @@
+pub mod cargo;
 pub mod file_system;
 pub mod git;
 pub mod git_common;
 pub mod http_git;
 pub mod kinds;
 pub mod loader;
-#[allow(dead_code)]
 pub mod npm;
 pub mod resolver;
 pub mod ssh_git;
@@ -23,8 +23,10 @@ use blaze_common::{
     value::Value,
     workspace::Workspace,
 };
+use loader::{ExecutorWithMetadata, LoaderContext};
 use possibly::possibly;
 use rand::{thread_rng, RngCore};
+use resolver::{ExecutorResolution, ExecutorUpdate};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -181,6 +183,7 @@ pub struct CustomExecutorResolution {
 #[derive(Serialize, Deserialize)]
 pub struct ExecutorCacheMetadata {
     pub resolution_state: Value,
+    pub load_metadata: Value,
     pub nonce: u64,
 }
 
@@ -204,14 +207,19 @@ fn resolve_custom_executor(
         .transpose()
         .with_context(|| format!("failed to restore solution state for executor {url}"))?;
 
-    let maybe_current_nonce = maybe_cached_metadata
-        .as_ref()
-        .map(|metadata| metadata.nonce);
+    let loader_context = LoaderContext {
+        workspace: context.workspace,
+    };
 
-    let (executor, resolution_state, cache_state) = match maybe_cached_metadata {
+    match maybe_cached_metadata {
         Some(cached_metadata) => {
             context.logger.debug(format!("{url} exists in cache"));
-            let update = resolver
+            let ExecutorUpdate {
+                load_strategy,
+                new_state: new_resolution_state,
+                src,
+                updated,
+            } = resolver
                 .update(url, &cached_metadata.resolution_state)
                 .with_context(|| {
                     format!(
@@ -220,9 +228,10 @@ fn resolve_custom_executor(
                 })?;
 
             (
-                update.executor,
-                update.new_state.unwrap_or(cached_metadata.resolution_state),
-                if update.updated {
+                src,
+                load_strategy,
+                new_resolution_state.unwrap_or(cached_metadata.resolution_state),
+                if updated {
                     context.logger.debug(format!("{url} has been updated"));
                     ExecutorCacheState::Updated
                 } else {
@@ -232,22 +241,54 @@ fn resolve_custom_executor(
             )
         }
         None => {
-            let resolution = resolver
+            let ExecutorResolution {
+                load_strategy,
+                src,
+                state: resolution_state,
+            } = resolver
                 .resolve(url)
                 .with_context(|| format!("failed to resolve executor {url}"))?;
 
             context.logger.debug(format!("{url} was resolved"));
 
+            let loader = load_strategy.get_loader(loader_context);
+            let ExecutorWithMetadata { executor, metadata: load_metadata } = loader.load_from_src(&src)?;
+            let nonce = thread_rng().next_u64();
             (
-                resolution.executor,
-                resolution.state,
-                ExecutorCacheState::New,
+                CustomExecutorResolution {
+                    nonce,
+                    executor,
+                    state: ExecutorCacheState::New
+                },
+                Some(ExecutorCacheMetadata {
+                    load_metadata,
+                    nonce,
+                    resolution_state
+                })
             )
         }
+    }
+
+    let loader = load_strategy.get_loader(LoaderContext {
+        workspace: context.workspace,
+    });
+
+    let executor = match cache_state {
+        ExecutorCacheState::New | ExecutorCacheState::Updated => {
+            loader.load_from_src(&executor_src).with_context(|| {
+                format!(
+                    "failed to load executor {url} from {}",
+                    executor_src.display()
+                )
+            })?
+        }
+        ExecutorCacheState::Cached => loader
+            .load_from_metadata(&maybe_cached_metadata.as_ref().unwrap().load_metadata)
+            .with_context(|| format!("failed to load executor {url} from cache"))?,
     };
 
     let nonce = match cache_state {
-        ExecutorCacheState::Cached if maybe_current_nonce.is_some() => maybe_current_nonce.unwrap(),
+        ExecutorCacheState::Cached => maybe_cached_metadata.as_ref().unwrap().nonce,
         _ => thread_rng().next_u64(),
     };
 
@@ -255,6 +296,7 @@ fn resolve_custom_executor(
         let next_metadata = ExecutorCacheMetadata {
             nonce,
             resolution_state,
+            load_metadata,
         };
 
         cache
@@ -287,10 +329,7 @@ pub fn get_executor_package_id(reference: &ExecutorReference) -> u64 {
                     git_options.checkout().hash(&mut hasher);
                     git_options.path().hash(&mut hasher);
                 }
-                Location::GitOverSsh {
-                    git_options,
-                    ..
-                } => {
+                Location::GitOverSsh { git_options, .. } => {
                     git_options.checkout().hash(&mut hasher);
                     git_options.path().hash(&mut hasher);
                 }

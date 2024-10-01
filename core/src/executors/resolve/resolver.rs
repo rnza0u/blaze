@@ -1,23 +1,28 @@
+use std::path::PathBuf;
+
 use blaze_common::{error::Result, executor::Location, value::Value};
 use url::Url;
 
 use crate::executors::DynExecutor;
 
 use super::{
-    file_system::{FileSystemResolver, FileSystemResolverContext}, git::GitResolver, git_common::GitResolverContext, http_git::GitOverHttpResolver, npm::{NpmResolver, NpmResolverContext}, ssh_git::GitOverSshResolver, CustomResolutionContext
+    file_system::{FileSystemResolver, FileSystemResolverContext}, git::GitResolver, git_common::GitResolverContext, http_git::GitOverHttpResolver, loader::ExecutorLoadStrategy, npm::{NpmResolver, NpmResolverContext}, ssh_git::GitOverSshResolver, CustomResolutionContext
 };
 
 pub struct ExecutorResolution {
-    pub executor: DynExecutor,
+    pub src: PathBuf,
     pub state: Value,
+    pub load_strategy: ExecutorLoadStrategy
 }
 
 pub struct ExecutorUpdate {
-    pub executor: DynExecutor,
+    pub src: PathBuf,
+    pub load_strategy: ExecutorLoadStrategy,
     pub new_state: Option<Value>,
-    pub updated: bool,
+    pub updated: bool
 }
 
+/// Resolves an executor's source code based on a URL.
 pub trait ExecutorResolver {
     fn resolve(&self, url: &Url) -> Result<ExecutorResolution>;
 
