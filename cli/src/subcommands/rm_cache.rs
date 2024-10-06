@@ -65,10 +65,7 @@ impl BlazeSubCommandExecution for RmCacheCommand {
             options = options.with_depth(depth);
         }
 
-        if let Some(project) = self
-            .double
-            .and_then(|double| double.project)
-        {
+        if let Some(project) = self.double.and_then(|double| double.project) {
             options = options
                 .with_selector_source(SelectorSource::Provided(ProjectSelector::array([project])))
         } else if let Some(source) = self.selection.get_selector_source() {

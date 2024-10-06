@@ -20,7 +20,7 @@ use crate::system::file_changes::{MatchedFiles, MatchedFilesState};
 
 use super::{
     kinds::infer_local_executor_type,
-    loader::{ExecutorLoadStrategy, ExecutorLoader, ExecutorWithMetadata, LoaderContext},
+    loader::ExecutorLoadStrategy,
     resolver::{ExecutorResolution, ExecutorResolver, ExecutorUpdate},
 };
 
@@ -99,13 +99,13 @@ impl<'a> FileSystemResolver<'a> {
         Ok(kind)
     }
 
-    fn get_load_strategy(&self, kind: ExecutorKind) -> Result<(ExecutorWithMetadata, ExecutorKind)> {
-        let strategy = match kind {
-            ExecutorKind::Node => ExecutorLoadStrategy::NodeLocal,
-            ExecutorKind::Rust => ExecutorLoadStrategy::RustLocal
-        };
+    fn get_load_strategy(&self, kind: ExecutorKind) -> ExecutorLoadStrategy {
+        
 
-        Ok(strategy)
+        match kind {
+            ExecutorKind::Node => ExecutorLoadStrategy::NodeLocal,
+            ExecutorKind::Rust => ExecutorLoadStrategy::RustLocal,
+        }
     }
 }
 
@@ -121,8 +121,8 @@ impl ExecutorResolver for FileSystemResolver<'_> {
             src: root.to_owned(),
             load_strategy: self.get_load_strategy(kind),
             state: to_value(State {
-                root,
                 files: MatchedFilesState::from_files(self.get_matched_files(&root)?)?,
+                root,
                 kind,
             })?,
         })
@@ -138,28 +138,25 @@ impl ExecutorResolver for FileSystemResolver<'_> {
         let merged_state = state.files.merge(matched_files)?;
 
         let update = match self.options.rebuild() {
-            RebuildStrategy::OnChanges if merged_state.changes.is_empty() => {
-                ExecutorUpdate {
-                    load_strategy: self.get_load_strategy(state.kind),
-                    new_state: Some(to_value(State {
-                        files: merged_state.files_state,
-                        kind: state.kind,
-                        root: root.to_owned()
-                    })?),
-                    src: root,
-                    updated: false,
-                }
-            }
+            RebuildStrategy::OnChanges if merged_state.changes.is_empty() => ExecutorUpdate {
+                load_strategy: self.get_load_strategy(state.kind),
+                new_state: Some(to_value(State {
+                    files: merged_state.files_state,
+                    kind: state.kind,
+                    root: root.to_owned(),
+                })?),
+                update: None,
+            },
             _ => {
+                let kind = self.get_kind(&root)?;
                 ExecutorUpdate {
-                    load_strategy: self.get_load_strategy(self.get_kind(&root)),
+                    load_strategy: self.get_load_strategy(kind),
                     new_state: Some(to_value(State {
                         kind,
                         files: merged_state.files_state,
                         root: root.to_owned(),
                     })?),
-                    src: root,
-                    updated: true,
+                    update: Some(root),
                 }
             }
         };

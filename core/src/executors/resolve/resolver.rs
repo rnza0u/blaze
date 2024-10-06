@@ -3,23 +3,27 @@ use std::path::PathBuf;
 use blaze_common::{error::Result, executor::Location, value::Value};
 use url::Url;
 
-use crate::executors::DynExecutor;
-
 use super::{
-    file_system::{FileSystemResolver, FileSystemResolverContext}, git::GitResolver, git_common::GitResolverContext, http_git::GitOverHttpResolver, loader::ExecutorLoadStrategy, npm::{NpmResolver, NpmResolverContext}, ssh_git::GitOverSshResolver, CustomResolutionContext
+    file_system::{FileSystemResolver, FileSystemResolverContext},
+    git::GitResolver,
+    git_common::GitResolverContext,
+    http_git::GitOverHttpResolver,
+    loader::ExecutorLoadStrategy,
+    npm::{NpmResolver, NpmResolverContext},
+    ssh_git::GitOverSshResolver,
+    CustomResolutionContext,
 };
 
 pub struct ExecutorResolution {
     pub src: PathBuf,
     pub state: Value,
-    pub load_strategy: ExecutorLoadStrategy
+    pub load_strategy: ExecutorLoadStrategy,
 }
 
 pub struct ExecutorUpdate {
-    pub src: PathBuf,
     pub load_strategy: ExecutorLoadStrategy,
     pub new_state: Option<Value>,
-    pub updated: bool
+    pub update: Option<PathBuf>,
 }
 
 /// Resolves an executor's source code based on a URL.
@@ -72,9 +76,9 @@ pub fn resolver_for_location<'a>(
             NpmResolverContext {
                 logger: context.logger,
                 save_in_workspace: context.cache.is_some(),
-                workspace: context.workspace
-            }
+                workspace: context.workspace,
+            },
         )),
-        _ => todo!()
+        _ => todo!(),
     }
 }

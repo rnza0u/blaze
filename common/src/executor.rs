@@ -659,8 +659,6 @@ pub enum SshAuthentication {
     },
 }
 
-
-
 #[derive(Deserialize, Serialize, Hash, Debug, PartialEq, Eq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct CargoOptions {
@@ -670,11 +668,17 @@ pub struct CargoOptions {
     no_ssl: bool,
     #[serde(default)]
     insecure: bool,
+    #[serde(default)]
+    pull: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     token: Option<String>,
 }
 
 impl CargoOptions {
+    pub fn pull(&self) -> bool {
+        self.pull
+    }
+
     pub fn version(&self) -> Option<&str> {
         self.version.as_deref()
     }
@@ -695,9 +699,8 @@ impl CargoOptions {
 #[derive(Deserialize, Serialize, Hash, Debug, PartialEq, Eq, Clone)]
 pub struct NpmUsernamePasswordAuthentication {
     username: String,
-    password: String
+    password: String,
 }
-
 
 impl NpmUsernamePasswordAuthentication {
     pub fn username(&self) -> &str {
@@ -711,7 +714,7 @@ impl NpmUsernamePasswordAuthentication {
 
 #[derive(Deserialize, Serialize, Hash, Debug, PartialEq, Eq, Clone)]
 pub struct NpmTokenAuthentication {
-    token: String
+    token: String,
 }
 
 impl NpmTokenAuthentication {
@@ -724,7 +727,7 @@ impl NpmTokenAuthentication {
 #[serde(untagged)]
 pub enum NpmAuthentication {
     UsernamePassword(NpmUsernamePasswordAuthentication),
-    Token(NpmTokenAuthentication)
+    Token(NpmTokenAuthentication),
 }
 
 #[derive(Deserialize, Serialize, Hash, Debug, PartialEq, Eq, Clone)]
@@ -740,7 +743,6 @@ pub struct NpmOptions {
 }
 
 impl NpmOptions {
-
     pub fn pull(&self) -> bool {
         self.pull
     }

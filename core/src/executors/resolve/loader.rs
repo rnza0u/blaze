@@ -4,7 +4,9 @@ use blaze_common::{error::Result, value::Value, workspace::Workspace};
 use serde::{Deserialize, Serialize};
 
 use crate::executors::{
-    node::loaders::{LocalNodeExecutorLoader, NpmPackageNodeExecutorLoader}, rust::loaders::LocalRustExecutorLoader, DynExecutor,
+    node::loaders::{LocalNodeExecutorLoader, NpmPackageNodeExecutorLoader},
+    rust::loaders::LocalRustExecutorLoader,
+    DynExecutor,
 };
 
 pub struct ExecutorWithMetadata {

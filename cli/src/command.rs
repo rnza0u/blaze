@@ -147,24 +147,26 @@ impl Command {
         if let Some(code) = self.json_var {
             variable_overrides.push(VariablesOverride::Code {
                 format: ConfigurationFileFormat::Json,
-                code
+                code,
             })
         } else if let Some(code) = self.yaml_var {
             variable_overrides.push(VariablesOverride::Code {
                 format: ConfigurationFileFormat::Yaml,
-                code
+                code,
             })
         } else if let Some(code) = self.jsonnet_var {
             variable_overrides.push(VariablesOverride::Code {
                 format: ConfigurationFileFormat::Jsonnet,
-                code
+                code,
             })
         }
 
         if let Some(str_vars) = self.str_vars {
-            variable_overrides.extend(str_vars.into_iter().map(|str_var| VariablesOverride::String {
-                path: str_var.path.split('.').map(str::to_owned).collect(),
-                value: str_var.value
+            variable_overrides.extend(str_vars.into_iter().map(|str_var| {
+                VariablesOverride::String {
+                    path: str_var.path.split('.').map(str::to_owned).collect(),
+                    value: str_var.value,
+                }
             }));
         }
 

@@ -24,7 +24,7 @@ use url::Url;
 use crate::system::{npm::npm, process::ProcessOptions, random::random_string};
 
 use super::{
-    loader::{ExecutorLoadStrategy, ExecutorWithMetadata, LoaderContext},
+    loader::ExecutorLoadStrategy,
     resolver::{ExecutorResolution, ExecutorResolver, ExecutorUpdate},
 };
 
@@ -271,7 +271,7 @@ impl ExecutorResolver for NpmResolver<'_> {
             load_strategy: ExecutorLoadStrategy::NodePackage,
             state: to_value(State {
                 package_root,
-                package_version: package_json.version
+                package_version: package_json.version,
             })?,
         })
     }
@@ -300,12 +300,13 @@ impl ExecutorResolver for NpmResolver<'_> {
         let tag = Tag::new(package, registry);
 
         let package_root_ref = &state.package_root;
-        let no_update = || Ok(ExecutorUpdate {
-            load_strategy: ExecutorLoadStrategy::NodePackage,
-            src: package_root_ref.to_owned(),
-            new_state: None,
-            updated: false,
-        });
+        let no_update = || {
+            Ok(ExecutorUpdate {
+                load_strategy: ExecutorLoadStrategy::NodePackage,
+                new_state: None,
+                update: None,
+            })
+        };
 
         if tag.is_fixed_version() {
             self.logger
@@ -371,8 +372,7 @@ impl ExecutorResolver for NpmResolver<'_> {
         Ok(ExecutorUpdate {
             load_strategy: ExecutorLoadStrategy::NodePackage,
             new_state: Some(to_value(&state)?),
-            updated: true,
-            src: state.package_root
+            update: Some(state.package_root),
         })
     }
 }

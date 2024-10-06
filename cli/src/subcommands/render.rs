@@ -66,14 +66,7 @@ impl BlazeSubCommandExecution for RenderCommand {
 
         match self.subcommand {
             RenderSubcommand::Project { name } => {
-                render_project(
-                    root,
-                    RenderProjectOptions {
-                        name,
-                        output,
-                    },
-                    global_options,
-                )?;
+                render_project(root, RenderProjectOptions { name, output }, global_options)?;
             }
             RenderSubcommand::Workspace => {
                 render_workspace(root, RenderWorkspaceOptions { output }, global_options)?;

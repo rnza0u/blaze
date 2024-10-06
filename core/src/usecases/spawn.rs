@@ -56,7 +56,7 @@ pub struct SpawnOptions<'a> {
     quiet: bool,
 }
 
-impl <'a> SpawnOptions<'a> {
+impl<'a> SpawnOptions<'a> {
     pub fn new(command: &'a str) -> Self {
         Self {
             command,

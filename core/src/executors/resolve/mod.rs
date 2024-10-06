@@ -217,8 +217,7 @@ fn resolve_custom_executor(
             let ExecutorUpdate {
                 load_strategy,
                 new_state: new_resolution_state,
-                src,
-                updated,
+                update,
             } = resolver
                 .update(url, &cached_metadata.resolution_state)
                 .with_context(|| {
@@ -229,8 +228,8 @@ fn resolve_custom_executor(
 
             let loader = load_strategy.get_loader(loader_context);
             let mut new_load_metadata = None;
-            let executor = if updated {
-                let ExecutorWithMetadata { executor, metadata } = loader.load_from_src(&src)?;
+            let executor = if let Some(src) = &update {
+                let ExecutorWithMetadata { executor, metadata } = loader.load_from_src(src)?;
                 context
                     .logger
                     .debug(format!("{url} has been updated from source"));
@@ -244,7 +243,8 @@ fn resolve_custom_executor(
                 executor
             };
 
-            let nonce = updated
+            let nonce = update
+                .is_some()
                 .then(|| thread_rng().next_u64())
                 .unwrap_or(cached_metadata.nonce);
 
@@ -252,15 +252,16 @@ fn resolve_custom_executor(
                 CustomExecutorResolution {
                     executor,
                     nonce,
-                    state: updated
-                        .then(|| ExecutorCacheState::Updated)
-                        .unwrap_or(ExecutorCacheState::Cached),
+                    state: if update
+                        .is_some() { ExecutorCacheState::Updated } else { ExecutorCacheState::Cached },
                 },
-                (updated || new_resolution_state.is_some()).then(|| ExecutorCacheMetadata {
-                    nonce,
-                    load_metadata: new_load_metadata.unwrap_or(cached_metadata.load_metadata),
-                    resolution_state: new_resolution_state
-                        .unwrap_or(cached_metadata.resolution_state),
+                (update.is_some() || new_resolution_state.is_some()).then(|| {
+                    ExecutorCacheMetadata {
+                        nonce,
+                        load_metadata: new_load_metadata.unwrap_or(cached_metadata.load_metadata),
+                        resolution_state: new_resolution_state
+                            .unwrap_or(cached_metadata.resolution_state),
+                    }
                 }),
             )
         }
