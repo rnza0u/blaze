@@ -70,7 +70,7 @@ These scripts might assume that you are using `sudo` on your system. You can als
     },
     code: [
       `curl -sSf https://downloads.blaze-monorepo.dev/versions/latest/builds/${platform}/package | tar zx`,
-      type === 'linux' ? 'sudo install -t /usr/local/bin blaze' : 'sudo cp blaze /usr/local/bin'
+      type === 'linux' ? 'sudo install -t /usr/local/bin blaze' : 'sudo mv blaze /usr/local/bin'
     ].join('\n')
   }))
 } />
