@@ -28,7 +28,7 @@ impl NodeExecutor {
 impl Executor for NodeExecutor {
     fn execute(&self, context: ExecutorContext, options: Value) -> Result<()> {
         execute_node_bridge(NodeBridgeParameters {
-            module: &self.package.root.join(self.package.path.as_path()),
+            module: self.package.module_path(),
             context,
             options: &options,
         })

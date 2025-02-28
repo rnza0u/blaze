@@ -283,6 +283,14 @@ In this example, the second command will always fail (that's what the `false` pr
 
 The first command will eventually not last 30 seconds because it is going to be killed as soon as the second command terminates.
 
+:::warning 
+
+`ForceExit` might not work as expected when using the `shell` option. Its behavior is to force-exit parent processes, not whole process groups.
+
+For complex use cases where you need to kill detached shell processes, the [`std:exec`](./exec.mdx) would be more convenient.
+
+:::
+
 ### `Ignore`
 
 You can also choose to completely ignore failure for specific commands by using the `Ignore` value.

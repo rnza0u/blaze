@@ -6,7 +6,6 @@ use blaze_common::{
     util::normalize_path,
     value::Value,
 };
-use jsonschema::JSONSchema;
 use once_cell::sync::Lazy;
 use serde::Deserialize;
 
@@ -23,7 +22,7 @@ use anyhow::{anyhow, Context};
 /// Project configuration file name.
 pub const PROJECT_FILENAME: &str = "project";
 
-pub static PROJECT_JSON_SCHEMA: Lazy<JSONSchema> =
+pub static PROJECT_JSON_SCHEMA: Lazy<jsonschema::Validator> =
     Lazy::new(|| create_schema!("project-schema.json"));
 
 /// A handle to a [`Project`] struct which provides file system related functions and validation.

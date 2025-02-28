@@ -18,13 +18,14 @@ use serde::{Deserialize, Serialize};
 
 use super::{glob::glob, hash::hash_file};
 
-#[derive(PartialEq, Eq, Hash)]
+#[derive(PartialEq, Eq, Hash, Debug)]
 pub enum FileChangeType {
     Modified,
     Created,
     Removed,
 }
 
+#[derive(Debug)]
 pub struct FileChange {
     pub path: PathBuf,
     pub change_type: FileChangeType,

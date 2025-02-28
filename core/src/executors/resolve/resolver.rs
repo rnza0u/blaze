@@ -1,29 +1,38 @@
 use std::path::PathBuf;
 
-use blaze_common::{error::Result, executor::Location, value::Value};
+use blaze_common::{
+    error::Result,
+    executor::{ExecutorKind, Location},
+    value::Value,
+};
+use serde::{Deserialize, Serialize};
 use url::Url;
 
 use super::{
+    cargo::{CargoResolver, CargoResolverContext},
     file_system::{FileSystemResolver, FileSystemResolverContext},
     git::GitResolver,
     git_common::GitResolverContext,
     http_git::GitOverHttpResolver,
-    loader::ExecutorLoadStrategy,
     npm::{NpmResolver, NpmResolverContext},
     ssh_git::GitOverSshResolver,
     CustomResolutionContext,
 };
 
+#[derive(Serialize, Deserialize)]
+pub struct SourceInfo {
+    pub root: PathBuf,
+    pub kind: ExecutorKind,
+}
+
 pub struct ExecutorResolution {
-    pub src: PathBuf,
+    pub source: SourceInfo,
     pub state: Value,
-    pub load_strategy: ExecutorLoadStrategy,
 }
 
 pub struct ExecutorUpdate {
-    pub load_strategy: ExecutorLoadStrategy,
     pub new_state: Option<Value>,
-    pub update: Option<PathBuf>,
+    pub new_source: Option<SourceInfo>,
 }
 
 /// Resolves an executor's source code based on a URL.
@@ -36,14 +45,14 @@ pub trait ExecutorResolver {
 pub fn resolver_for_location<'a>(
     location: Location,
     context: CustomResolutionContext<'a>,
-) -> Box<dyn ExecutorResolver + 'a> {
+) -> Result<Box<dyn ExecutorResolver + 'a>> {
     let git_context = || GitResolverContext {
         logger: context.logger,
         workspace: context.workspace,
         save_in_workspace: context.cache.is_some(),
     };
 
-    match location {
+    let resolver: Box<dyn ExecutorResolver + 'a> = match location {
         Location::LocalFileSystem { options } => Box::new(FileSystemResolver::new(
             options,
             FileSystemResolverContext {
@@ -79,6 +88,16 @@ pub fn resolver_for_location<'a>(
                 workspace: context.workspace,
             },
         )),
-        _ => todo!(),
-    }
+        Location::Cargo { options } => Box::new(CargoResolver::try_new(
+            options,
+            CargoResolverContext {
+                logger: context.logger,
+                save_in_workspace: context.cache.is_some(),
+                workspace: context.workspace,
+            },
+        )?),
+        _ => unimplemented!(),
+    };
+
+    Ok(resolver)
 }

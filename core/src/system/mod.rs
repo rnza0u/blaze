@@ -1,3 +1,4 @@
+pub mod cargo;
 pub mod env;
 pub mod file_changes;
 pub mod glob;

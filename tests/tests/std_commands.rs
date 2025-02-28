@@ -6,7 +6,7 @@ use std::{
     fs::File,
     io::{BufRead, BufReader},
     path::Path,
-    time::SystemTime,
+    time::{Duration, Instant, SystemTime},
 };
 
 use blaze_core::{common::selector::ProjectSelector, run, RunOptions, SelectorSource};
@@ -167,6 +167,7 @@ fn force_exit() {
 }
 
 #[test]
+#[cfg(not(windows))]
 fn restart() {
     with_test_workspace(
         setup(json!({
@@ -183,6 +184,7 @@ fn restart() {
 }
 
 #[test]
+#[cfg(not(windows))]
 fn with_env() {
     with_test_workspace(
         setup(json!({
@@ -274,6 +276,35 @@ fn default_env() {
             test_var("BLAZE_PROJECT_NAME", "project");
             test_var("BLAZE_PROJECT_ROOT", root.join("project").to_str().unwrap());
             test_var("BLAZE_TARGET", "commands");
+        },
+    )
+}
+
+#[ignore = "this behavior yet needs to be implemented. it could be done using process groups but shared-child library does not expose a standard Child type. we should get rid of it."]
+#[test]
+fn force_exit_shell_command() {
+    with_test_workspace(
+        setup(json!({
+            "commands": [
+                {
+                    "program": "sleep",
+                    "arguments": ["30"],
+                    "detach": true
+                },
+                {
+                    "program": "false",
+                    "onFailure": "ForceExit"
+                }
+            ],
+            "shell": true
+        })),
+        |root| {
+            let start = Instant::now();
+            run_and_check_result(root, false);
+            assert!(
+                Instant::now().duration_since(start) < Duration::from_secs(30),
+                "command must have been killed in less than 30 seconds"
+            );
         },
     )
 }

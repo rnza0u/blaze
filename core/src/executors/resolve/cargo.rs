@@ -1,5 +1,5 @@
 use std::{
-    fmt::{Display, Pointer},
+    fmt::Display,
     path::{Path, PathBuf},
     str::FromStr,
 };
@@ -7,7 +7,7 @@ use std::{
 use anyhow::{anyhow, bail, Context};
 use blaze_common::{
     error::{Error, Result},
-    executor::CargoOptions,
+    executor::{CargoOptions, ExecutorKind},
     logger::Logger,
     value::{to_value, Value},
     workspace::Workspace,
@@ -21,8 +21,8 @@ use url::Url;
 use crate::system::random::random_string;
 
 use super::{
-    loader::ExecutorLoadStrategy,
-    resolver::{ExecutorResolution, ExecutorResolver, ExecutorUpdate},
+    builder::get_builder_for_executor_kind,
+    resolver::{ExecutorResolution, ExecutorResolver, ExecutorUpdate, SourceInfo},
 };
 
 const CRATES_ROOT: &str = ".blaze/cargo";
@@ -41,9 +41,9 @@ struct State {
 }
 
 pub struct CargoResolverContext<'a> {
-    workspace: &'a Workspace,
-    save_in_workspace: bool,
-    logger: &'a Logger,
+    pub workspace: &'a Workspace,
+    pub save_in_workspace: bool,
+    pub logger: &'a Logger,
 }
 
 #[derive(Deserialize)]
@@ -135,7 +135,7 @@ impl<'a> CargoResolver<'a> {
         }
     }
 
-    fn download_crate(
+    fn install_crate(
         &self,
         registry: &Url,
         crate_name: &str,
@@ -168,7 +168,12 @@ impl<'a> CargoResolver<'a> {
             .unpack(destination)
             .with_context(|| format!("failed to unpack crate {crate_name}"))?;
 
-        Ok(destination.join(format!("{crate_name}-{version}")))
+        let root = destination.join(format!("{crate_name}-{version}"));
+
+        let builder = get_builder_for_executor_kind(ExecutorKind::Rust);
+        builder.build(&root)?;
+
+        Ok(root)
     }
 
     fn find_matching_version(&self, mut available_versions: Vec<Version>) -> Result<Version> {
@@ -264,23 +269,25 @@ impl ExecutorResolver for CargoResolver<'_> {
             crate_root.display()
         ));
 
-        let src = self.download_crate(&registry_url, crate_name, &version, &crate_root)?;
+        let final_crate_root =
+            self.install_crate(&registry_url, crate_name, &version, &crate_root)?;
 
         Ok(ExecutorResolution {
-            load_strategy: ExecutorLoadStrategy::RustLocal,
             state: to_value(State {
-                crate_root: src.to_owned(),
+                crate_root: final_crate_root.to_owned(),
                 version,
             })?,
-            src,
+            source: SourceInfo {
+                kind: ExecutorKind::Rust,
+                root: final_crate_root,
+            },
         })
     }
 
     fn update(&self, url: &Url, state: &Value) -> Result<ExecutorUpdate> {
         let no_update = || ExecutorUpdate {
-            load_strategy: ExecutorLoadStrategy::RustLocal,
             new_state: None,
-            update: None,
+            new_source: None,
         };
         let logger = self.context.logger;
 
@@ -317,14 +324,16 @@ impl ExecutorResolver for CargoResolver<'_> {
             state.crate_root.display()
         ));
 
-        let src =
-            self.download_crate(&registry_url, crate_name, &new_version, &state.crate_root)?;
+        let final_crate_root =
+            self.install_crate(&registry_url, crate_name, &new_version, &state.crate_root)?;
         state.version = new_version;
 
         Ok(ExecutorUpdate {
-            load_strategy: ExecutorLoadStrategy::RustLocal,
             new_state: Some(to_value(state)?),
-            update: Some(src),
+            new_source: Some(SourceInfo {
+                kind: ExecutorKind::Rust,
+                root: final_crate_root,
+            }),
         })
     }
 }

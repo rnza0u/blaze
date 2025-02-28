@@ -559,53 +559,6 @@ impl<T> ExecutedGraph<T> {
     }
 }
 
-/// Optimize the whole graph so that we remove redondant relations between nodes.
-/// based on the work https://gist.github.com/matejker/6d9305e23a168ed66d3260eb261bb98b
-#[allow(unused)]
-#[deprecated]
-fn optimize_dependency_graph(dependency_graph: &DependencyGraph) -> DependencyGraph {
-    let mut dependencies_to_remove = dependency_graph
-        .keys()
-        .map(|target| (target, Vec::<&String>::new()))
-        .collect::<BTreeMap<_, _>>();
-
-    for (target, node) in dependency_graph {
-        let combinations = node
-            .dependencies
-            .keys()
-            .flat_map(|dependency| {
-                node.dependencies
-                    .keys()
-                    .map(move |other_dependency| (dependency, other_dependency))
-            })
-            .filter(|(dependency, other_dependency)| dependency != other_dependency);
-
-        for (dependency, other_dependency) in combinations {
-            if dependency_graph[other_dependency]
-                .dependencies
-                .contains_key(dependency)
-            {
-                dependencies_to_remove
-                    .get_mut(target)
-                    .unwrap()
-                    .push(dependency);
-            }
-        }
-    }
-
-    let mut optimized_graph = dependency_graph.clone();
-
-    for (target, duplicates) in dependencies_to_remove {
-        optimized_graph
-            .get_mut(target)
-            .unwrap()
-            .dependencies
-            .retain(|dependency, _| !duplicates.contains(&dependency));
-    }
-
-    optimized_graph
-}
-
 fn arc_error<T>(_: Arc<T>) -> Error {
     anyhow!("arc unwrap error.")
 }

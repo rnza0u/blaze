@@ -1,5 +1,4 @@
 use anyhow::{anyhow, Context};
-use jsonschema::JSONSchema;
 use once_cell::sync::Lazy;
 use serde::Deserialize;
 use std::{
@@ -25,7 +24,7 @@ use super::{
 /// The workspace configuration filename.
 pub const WORKSPACE_FILENAME: &str = "workspace";
 
-pub static WORKSPACE_JSON_SCHEMA: Lazy<JSONSchema> =
+pub static WORKSPACE_JSON_SCHEMA: Lazy<jsonschema::Validator> =
     Lazy::new(|| create_schema!("workspace-schema.json"));
 
 pub struct OpenWorkspaceOptions<'a> {

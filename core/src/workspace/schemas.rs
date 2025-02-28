@@ -1,18 +1,18 @@
 use anyhow::anyhow;
 use blaze_common::{error::Result, value::Value};
-use jsonschema::JSONSchema;
+use jsonschema::Validator;
 
 macro_rules! create_schema {
     ($name:literal) => {{
         let schema_str = include_str!(concat!(env!("BLAZE_JSON_SCHEMAS_LOCATION"), '/', $name));
-        jsonschema::JSONSchema::options()
+        jsonschema::Validator::options()
             .with_draft(jsonschema::Draft::Draft202012)
-            .compile(&serde_json::from_str(schema_str).expect("could not parse JSON schema"))
+            .build(&serde_json::from_str(schema_str).expect("could not parse JSON schema"))
             .expect("could not compile JSON schema")
     }};
 }
 
-pub fn validate_json(schema: &JSONSchema, value: &Value) -> Result<()> {
+pub fn validate_json(schema: &Validator, value: &Value) -> Result<()> {
     schema
         .validate(&serde_json::to_value(value)?)
         .map_err(|errors| {

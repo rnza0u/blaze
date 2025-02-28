@@ -1,3 +1,4 @@
+pub mod builder;
 pub mod cargo;
 pub mod file_system;
 pub mod git;
@@ -23,10 +24,10 @@ use blaze_common::{
     value::Value,
     workspace::Workspace,
 };
-use loader::{ExecutorWithMetadata, LoaderContext};
+use loader::{get_loader_for_executor_kind, ExecutorWithMetadata};
 use possibly::possibly;
 use rand::{thread_rng, RngCore};
-use resolver::{ExecutorResolution, ExecutorUpdate};
+use resolver::{ExecutorResolution, ExecutorUpdate, SourceInfo};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -182,6 +183,7 @@ pub struct CustomExecutorResolution {
 
 #[derive(Serialize, Deserialize)]
 pub struct ExecutorCacheMetadata {
+    pub source_info: SourceInfo,
     pub resolution_state: Value,
     pub load_metadata: Value,
     pub nonce: u64,
@@ -193,7 +195,7 @@ fn resolve_custom_executor(
     package_id: u64,
     context: CustomResolutionContext<'_>,
 ) -> Result<CustomExecutorResolution> {
-    let resolver = resolver_for_location(location.clone(), context);
+    let resolver = resolver_for_location(location.clone(), context)?;
 
     let state_key = format!("executors/{package_id}");
 
@@ -207,17 +209,12 @@ fn resolve_custom_executor(
         .transpose()
         .with_context(|| format!("failed to restore solution state for executor {url}"))?;
 
-    let loader_context = LoaderContext {
-        workspace: context.workspace,
-    };
-
     let (resolution, new_cached_metadata) = match maybe_cached_metadata {
         Some(cached_metadata) => {
             context.logger.debug(format!("{url} exists in cache"));
             let ExecutorUpdate {
-                load_strategy,
                 new_state: new_resolution_state,
-                update,
+                new_source,
             } = resolver
                 .update(url, &cached_metadata.resolution_state)
                 .with_context(|| {
@@ -226,16 +223,18 @@ fn resolve_custom_executor(
                     )
                 })?;
 
-            let loader = load_strategy.get_loader(loader_context);
             let mut new_load_metadata = None;
-            let executor = if let Some(src) = &update {
-                let ExecutorWithMetadata { executor, metadata } = loader.load_from_src(src)?;
+            let executor = if let Some(source_info) = &new_source {
+                let loader = get_loader_for_executor_kind(source_info.kind);
+                let ExecutorWithMetadata { executor, metadata } =
+                    loader.load_from_src(&source_info.root)?;
                 context
                     .logger
                     .debug(format!("{url} has been updated from source"));
-                new_load_metadata.insert(metadata);
+                let _ = new_load_metadata.insert(metadata);
                 executor
             } else {
+                let loader = get_loader_for_executor_kind(cached_metadata.source_info.kind);
                 let executor = loader.load_from_metadata(&cached_metadata.load_metadata)?;
                 context
                     .logger
@@ -243,7 +242,7 @@ fn resolve_custom_executor(
                 executor
             };
 
-            let nonce = update
+            let nonce = new_source
                 .is_some()
                 .then(|| thread_rng().next_u64())
                 .unwrap_or(cached_metadata.nonce);
@@ -252,11 +251,15 @@ fn resolve_custom_executor(
                 CustomExecutorResolution {
                     executor,
                     nonce,
-                    state: if update
-                        .is_some() { ExecutorCacheState::Updated } else { ExecutorCacheState::Cached },
+                    state: if new_source.is_some() {
+                        ExecutorCacheState::Updated
+                    } else {
+                        ExecutorCacheState::Cached
+                    },
                 },
-                (update.is_some() || new_resolution_state.is_some()).then(|| {
+                (new_source.is_some() || new_resolution_state.is_some()).then(|| {
                     ExecutorCacheMetadata {
+                        source_info: new_source.unwrap_or(cached_metadata.source_info),
                         nonce,
                         load_metadata: new_load_metadata.unwrap_or(cached_metadata.load_metadata),
                         resolution_state: new_resolution_state
@@ -267,18 +270,17 @@ fn resolve_custom_executor(
         }
         None => {
             let ExecutorResolution {
-                load_strategy,
-                src,
+                source,
                 state: resolution_state,
             } = resolver
                 .resolve(url)
                 .with_context(|| format!("failed to resolve executor {url}"))?;
 
-            let loader = load_strategy.get_loader(loader_context);
+            let loader = get_loader_for_executor_kind(source.kind);
             let ExecutorWithMetadata {
                 executor,
                 metadata: load_metadata,
-            } = loader.load_from_src(&src)?;
+            } = loader.load_from_src(&source.root)?;
             let nonce = thread_rng().next_u64();
 
             context
@@ -292,6 +294,7 @@ fn resolve_custom_executor(
                     state: ExecutorCacheState::New,
                 },
                 Some(ExecutorCacheMetadata {
+                    source_info: source,
                     load_metadata,
                     nonce,
                     resolution_state,

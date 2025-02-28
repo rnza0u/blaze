@@ -11,7 +11,8 @@ use base64::Engine;
 use blaze_common::{
     error::Result,
     executor::{
-        NpmAuthentication, NpmOptions, NpmTokenAuthentication, NpmUsernamePasswordAuthentication,
+        ExecutorKind, NpmAuthentication, NpmOptions, NpmTokenAuthentication,
+        NpmUsernamePasswordAuthentication,
     },
     logger::Logger,
     util::path_to_string,
@@ -23,10 +24,7 @@ use url::Url;
 
 use crate::system::{npm::npm, process::ProcessOptions, random::random_string};
 
-use super::{
-    loader::ExecutorLoadStrategy,
-    resolver::{ExecutorResolution, ExecutorResolver, ExecutorUpdate},
-};
+use super::resolver::{ExecutorResolution, ExecutorResolver, ExecutorUpdate, SourceInfo};
 
 const PACKAGE_LOCATION: &str = ".blaze/npm";
 
@@ -165,7 +163,6 @@ pub struct NpmResolver<'a> {
     options: NpmOptions,
     logger: &'a Logger,
     packages_root: PathBuf,
-    workspace: &'a Workspace,
 }
 
 #[derive(Clone, Copy)]
@@ -180,7 +177,6 @@ impl<'a> NpmResolver<'a> {
         Self {
             options,
             logger: context.logger,
-            workspace: context.workspace,
             packages_root: if context.save_in_workspace {
                 context.workspace.root().join(PACKAGE_LOCATION)
             } else {
@@ -267,8 +263,10 @@ impl ExecutorResolver for NpmResolver<'_> {
         ));
 
         Ok(ExecutorResolution {
-            src: package_root.to_owned(),
-            load_strategy: ExecutorLoadStrategy::NodePackage,
+            source: SourceInfo {
+                kind: ExecutorKind::Node,
+                root: package_root.to_owned(),
+            },
             state: to_value(State {
                 package_root,
                 package_version: package_json.version,
@@ -299,12 +297,10 @@ impl ExecutorResolver for NpmResolver<'_> {
         let registry = url.host_str();
         let tag = Tag::new(package, registry);
 
-        let package_root_ref = &state.package_root;
         let no_update = || {
             Ok(ExecutorUpdate {
-                load_strategy: ExecutorLoadStrategy::NodePackage,
                 new_state: None,
-                update: None,
+                new_source: None,
             })
         };
 
@@ -370,9 +366,11 @@ impl ExecutorResolver for NpmResolver<'_> {
         state.package_version = new_package_json.version;
 
         Ok(ExecutorUpdate {
-            load_strategy: ExecutorLoadStrategy::NodePackage,
             new_state: Some(to_value(&state)?),
-            update: Some(state.package_root),
+            new_source: Some(SourceInfo {
+                root: state.package_root,
+                kind: ExecutorKind::Node,
+            }),
         })
     }
 }

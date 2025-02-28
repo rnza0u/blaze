@@ -1,4 +1,5 @@
 use std::{
+    borrow::Cow,
     collections::BTreeSet,
     io,
     path::{Path, PathBuf},
@@ -19,31 +20,25 @@ use url::Url;
 use crate::system::file_changes::{MatchedFiles, MatchedFilesState};
 
 use super::{
+    builder::get_builder_for_executor_kind,
     kinds::infer_local_executor_type,
-    loader::ExecutorLoadStrategy,
-    resolver::{ExecutorResolution, ExecutorResolver, ExecutorUpdate},
+    resolver::{ExecutorResolution, ExecutorResolver, ExecutorUpdate, SourceInfo},
 };
 
 #[derive(Serialize, Deserialize)]
 pub struct State {
-    root: PathBuf,
-    kind: ExecutorKind,
     files: MatchedFilesState,
 }
 
 fn default_file_changes_matchers(root: &Path) -> BTreeSet<FileChangesMatcher> {
-    [FileChangesMatcher::new("**")
-        .with_exclude([
-            "node_modules/**",
-            "target/**",
-            ".git/**",
-            ".vscode/**",
-            "dist/**",
-            "build/**",
-        ])
-        .with_root(root)
-        .with_behavior(MatchingBehavior::Mixed)]
-    .into()
+    ["src/**", "Cargo.toml", "package.json"]
+        .into_iter()
+        .map(|pattern| {
+            FileChangesMatcher::new(pattern)
+                .with_root(root)
+                .with_behavior(MatchingBehavior::Mixed)
+        })
+        .collect()
 }
 
 pub struct FileSystemResolverContext<'a> {
@@ -86,8 +81,12 @@ impl<'a> FileSystemResolver<'a> {
     }
 
     fn get_matched_files(&self, root: &Path) -> Result<MatchedFiles> {
-        let default = default_file_changes_matchers(root);
-        MatchedFiles::try_new(root, self.options.watch().unwrap_or(&default))
+        let matchers = self
+            .options
+            .watch()
+            .map(Cow::Borrowed)
+            .unwrap_or_else(|| Cow::Owned(default_file_changes_matchers(root)));
+        MatchedFiles::try_new(root, &matchers)
     }
 
     fn get_kind(&self, root: &Path) -> Result<ExecutorKind> {
@@ -98,15 +97,6 @@ impl<'a> FileSystemResolver<'a> {
         };
         Ok(kind)
     }
-
-    fn get_load_strategy(&self, kind: ExecutorKind) -> ExecutorLoadStrategy {
-        
-
-        match kind {
-            ExecutorKind::Node => ExecutorLoadStrategy::NodeLocal,
-            ExecutorKind::Rust => ExecutorLoadStrategy::RustLocal,
-        }
-    }
 }
 
 impl ExecutorResolver for FileSystemResolver<'_> {
@@ -116,15 +106,14 @@ impl ExecutorResolver for FileSystemResolver<'_> {
             .with_context(|| format!("could not get canonical executor path from {url}"))?;
 
         let kind = self.get_kind(&root)?;
+        let builder = get_builder_for_executor_kind(kind);
+        builder.build(&root)?;
 
         Ok(ExecutorResolution {
-            src: root.to_owned(),
-            load_strategy: self.get_load_strategy(kind),
             state: to_value(State {
                 files: MatchedFilesState::from_files(self.get_matched_files(&root)?)?,
-                root,
-                kind,
             })?,
+            source: SourceInfo { kind, root },
         })
     }
 
@@ -137,30 +126,21 @@ impl ExecutorResolver for FileSystemResolver<'_> {
         let matched_files = self.get_matched_files(&root)?;
         let merged_state = state.files.merge(matched_files)?;
 
-        let update = match self.options.rebuild() {
-            RebuildStrategy::OnChanges if merged_state.changes.is_empty() => ExecutorUpdate {
-                load_strategy: self.get_load_strategy(state.kind),
-                new_state: Some(to_value(State {
-                    files: merged_state.files_state,
-                    kind: state.kind,
-                    root: root.to_owned(),
-                })?),
-                update: None,
-            },
+        let new_src = match self.options.rebuild() {
+            RebuildStrategy::OnChanges if merged_state.changes.is_empty() => None,
             _ => {
                 let kind = self.get_kind(&root)?;
-                ExecutorUpdate {
-                    load_strategy: self.get_load_strategy(kind),
-                    new_state: Some(to_value(State {
-                        kind,
-                        files: merged_state.files_state,
-                        root: root.to_owned(),
-                    })?),
-                    update: Some(root),
-                }
+                let builder = get_builder_for_executor_kind(kind);
+                builder.build(&root)?;
+                Some(SourceInfo { root, kind })
             }
         };
 
-        Ok(update)
+        Ok(ExecutorUpdate {
+            new_state: Some(to_value(State {
+                files: merged_state.files_state,
+            })?),
+            new_source: new_src,
+        })
     }
 }

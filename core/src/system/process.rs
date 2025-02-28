@@ -7,9 +7,7 @@ use std::{
     sync::{RwLock, RwLockWriteGuard},
     thread::JoinHandle,
 };
-
 use anyhow::{anyhow, Context};
-
 use blaze_common::error::Result;
 use shared_child::SharedChild;
 
@@ -162,7 +160,6 @@ impl Process {
     }
 
     /// Wait indefinitely for process termination.
-    /// This does not take ownership or a mutable reference.
     pub fn wait(&self) -> Result<ProcessStatus> {
         let status = self
             .child

@@ -15,9 +15,9 @@ use url::Url;
 use crate::system::random::random_string;
 
 use super::{
+    builder::get_builder_for_executor_kind,
     kinds::infer_local_executor_type,
-    loader::ExecutorLoadStrategy,
-    resolver::{ExecutorResolution, ExecutorUpdate},
+    resolver::{ExecutorResolution, ExecutorUpdate, SourceInfo},
     ExecutorResolver,
 };
 
@@ -27,7 +27,6 @@ const REPOSITORIES_PATH: &str = ".blaze/repositories";
 struct State {
     repository_path: PathBuf,
     src_path: PathBuf,
-    kind: ExecutorKind,
 }
 
 pub struct GitHeadlessResolver<'a> {
@@ -93,13 +92,6 @@ impl<'a> GitHeadlessResolver<'a> {
         };
         Ok(kind)
     }
-
-    fn get_load_strategy(&self, kind: ExecutorKind) -> ExecutorLoadStrategy {
-        match kind {
-            ExecutorKind::Rust => ExecutorLoadStrategy::RustLocal,
-            ExecutorKind::Node => ExecutorLoadStrategy::NodeLocal,
-        }
-    }
 }
 
 impl ExecutorResolver for GitHeadlessResolver<'_> {
@@ -156,13 +148,15 @@ impl ExecutorResolver for GitHeadlessResolver<'_> {
         let src_path = self.get_src_path(&repository_path);
 
         let kind = self.get_kind(&src_path)?;
-        let load_strategy = self.get_load_strategy(kind);
+        let builder = get_builder_for_executor_kind(kind);
+        builder.build(&src_path)?;
 
         Ok(ExecutorResolution {
-            src: src_path.to_owned(),
-            load_strategy,
-            state: to_value(State {
+            source: SourceInfo {
                 kind,
+                root: src_path.to_owned(),
+            },
+            state: to_value(State {
                 repository_path,
                 src_path,
             })?,
@@ -175,9 +169,8 @@ impl ExecutorResolver for GitHeadlessResolver<'_> {
         let logger = self.context.logger;
 
         let no_update = || ExecutorUpdate {
-            load_strategy: self.get_load_strategy(state.kind),
             new_state: None,
-            update: None,
+            new_source: None,
         };
 
         if !self.git_options.pull() {
@@ -245,13 +238,14 @@ impl ExecutorResolver for GitHeadlessResolver<'_> {
         let kind = self.get_kind(&src_path)?;
 
         Ok(ExecutorUpdate {
-            update: Some(src_path.to_owned()),
-            new_state: Some(to_value(State {
+            new_source: Some(SourceInfo {
                 kind,
+                root: src_path.to_owned(),
+            }),
+            new_state: Some(to_value(State {
                 repository_path: state.repository_path,
                 src_path,
             })?),
-            load_strategy: self.get_load_strategy(kind),
         })
     }
 }
