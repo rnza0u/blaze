@@ -1,0 +1,20 @@
+.container {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.table {
+  text-align: center;
+}
+
+.row {
+  text-align: center;
+  color: var(--ifm-color-danger-dark);
+}
+
+.loading {
+  text-align: center;
+}

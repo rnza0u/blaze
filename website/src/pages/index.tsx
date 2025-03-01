@@ -12,7 +12,6 @@ import BlazeLogo from '../../../assets/logos/Blaze-logo.svg'
 
 function HomepageHeader() {
     const { siteConfig } = useDocusaurusContext()
-
     return (
         <header className={clsx('hero hero--dark', styles.heroBanner)}>
             <div className="container">

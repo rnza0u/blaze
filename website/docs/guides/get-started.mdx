@@ -10,7 +10,7 @@ import WithLatestVersion from '@site/src/components/WithLatestVersion'
 import CodeBlock from '@theme/CodeBlock'
 import Admonition from '@theme/Admonition'
 import BrowserOnly from '@docusaurus/BrowserOnly'
-import { downloadUrl } from '@site/src/services/downloads'
+import { packageDownloadUrl } from '@site/src/services/util'
 
 Let's follow a few steps and we'll get you started in less than 10 minutes.
 
@@ -83,7 +83,7 @@ blaze version
 
 ### Install on Windows
 
-- <BrowserOnly>{() => <a target="_blank" href={downloadUrl('latest', 'x86_64-windows').toString()}>Download the latest package for Windows.</a>}</BrowserOnly>
+- <BrowserOnly>{() => <a target="_blank" href={packageDownloadUrl('latest', 'x86_64-windows').toString()}>Download the latest package for Windows.</a>}</BrowserOnly>
 - Extract `blaze.exe` anywhere on your system.
 - Add its parent directory to your `Path` environment variable.
 - Restart your shell environment and run `blaze version`.

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { listVersions } from '../../services/downloads'
+import { listVersions } from '../../services/util'
 import semver from 'semver'
 
 export default function (props){
