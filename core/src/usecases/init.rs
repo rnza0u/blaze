@@ -96,7 +96,7 @@ pub fn init<R: AsRef<Path>>(root: R, options: InitOptions, globals: GlobalOption
                 ".blaze/*".into(),
                 format!("!{}", HELPERS_FOLDER).into(),
                 format!("!{}.*", VARIABLES_FILE_PATH).into(),
-                "!.blaze/jpath".into(),
+                "!.blaze/.jpath".into(),
                 "user-variables.*".into(),
             ],
         )?;
