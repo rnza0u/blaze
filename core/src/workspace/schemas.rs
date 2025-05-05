@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use anyhow::bail;
 use blaze_common::{error::Result, value::Value};
 use jsonschema::Validator;
 
@@ -12,19 +12,21 @@ macro_rules! create_schema {
     }};
 }
 
-pub fn validate_json(schema: &Validator, value: &Value) -> Result<()> {
-    schema
-        .validate(&serde_json::to_value(value)?)
-        .map_err(|errors| {
-            let mut lines = Vec::with_capacity(2);
-            for error in errors {
-                lines.push(format!(
-                    "validation error: {} (at {})",
-                    error, error.instance_path
-                ));
-            }
-            anyhow!(lines.join("\n"))
-        })
+pub fn validate_json(validator: &Validator, value: &Value) -> Result<()> {
+    let mut formatted_errors = Vec::with_capacity(2);
+
+    for error in validator.iter_errors(&serde_json::to_value(value)?) {
+        formatted_errors.push(format!(
+            "validation error: {} (at {})",
+            error, error.instance_path
+        ));
+    }
+
+    if formatted_errors.len() > 0 {
+        bail!(formatted_errors.join("\n"))
+    }
+
+    Ok(())
 }
 
 pub(crate) use create_schema;

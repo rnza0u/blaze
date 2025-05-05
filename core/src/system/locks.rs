@@ -1,11 +1,10 @@
 use std::{
-    fs::{File, OpenOptions},
+    fs::{File, OpenOptions, TryLockError},
     path::Path,
 };
 
 use anyhow::bail;
 use blaze_common::error::Result;
-use fs4::{fs_std::FileExt, lock_contended_error};
 
 const LOCKS_PATH: &str = ".blaze/locks";
 const LOCKS_CLEANUP_LOCK_ID: u64 = 0;
@@ -22,13 +21,13 @@ pub fn clean_locks(root: &Path) -> Result<()> {
             }
             let path = entry.path();
             let file = OpenOptions::new().write(true).open(&path)?;
-            match file.try_lock_exclusive() {
+            match file.try_lock() {
                 Ok(()) => {
                     file.unlock()?;
                     std::fs::remove_file(&path)?;
                 }
                 Err(err) => {
-                    if err.kind() == lock_contended_error().kind() {
+                    if matches!(err, TryLockError::WouldBlock) {
                         continue;
                     }
                     bail!(err)
@@ -74,13 +73,13 @@ impl ProcessLock {
     where
         F: FnOnce() -> T,
     {
-        match self.lockfile.try_lock_exclusive() {
+        match self.lockfile.try_lock() {
             Ok(()) => {}
-            Err(err) if err.kind() == lock_contended_error().kind() => {
+            Err(err) if matches!(err, TryLockError::WouldBlock) => {
                 if let Some(on_wait) = self.on_wait {
                     on_wait();
                 }
-                self.lockfile.lock_exclusive()?;
+                self.lockfile.lock()?;
             }
             Err(err) => bail!(err),
         }

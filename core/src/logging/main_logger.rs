@@ -1,7 +1,7 @@
 use super::colors::colorize;
 use blaze_common::logger::{LogLevel, Logger, LoggingStrategy};
 use colored::*;
-use rand::{thread_rng, RngCore};
+use rand::{rng, RngCore};
 use std::io::Write;
 
 pub fn get_logger(level: LogLevel) -> Logger {
@@ -47,7 +47,7 @@ impl MainLoggingStrategy {
     }
 
     fn set_context(&mut self, context: &str) {
-        let mut random = thread_rng();
+        let mut random = rng();
         let base_color = [68_u8, 213, 252];
         let mut random_color = [0_u8; 3];
         random.fill_bytes(&mut random_color);

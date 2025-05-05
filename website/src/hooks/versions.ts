@@ -5,38 +5,38 @@ const LATEST = 'latest'
 
 type BuildsState = 
   (|Readonly<{
-    status: 'loading'
+      status: 'loading'
   }>
   |Readonly<{
-    status: 'error',
-    error: unknown
+      status: 'error',
+      error: unknown
   }>
   |Readonly<{
-    status: 'ready'
+      status: 'ready'
   }>) & Readonly<{
-    versions: readonly string[]
+      versions: readonly string[]
   }>
 
 export function useVersions(){
-  const [state, setState] = useState<BuildsState>({
-    status: 'loading',
-    versions: [LATEST]
-  })
+    const [state, setState] = useState<BuildsState>({
+        status: 'loading',
+        versions: [LATEST]
+    })
 
-  useEffect(() => {
-    listVersions()
-      .then(versions => setState({
-        status: 'ready',
-        versions: [LATEST, ...versions]
-      }))
-      .catch(error => {
-        setState(({ versions }) => ({
-          error,
-          status: 'error',
-          versions
-        })) 
-      })
-  }, [])
+    useEffect(() => {
+        listVersions()
+            .then(versions => setState({
+                status: 'ready',
+                versions: [LATEST, ...versions]
+            }))
+            .catch(error => {
+                setState(({ versions }) => ({
+                    error,
+                    status: 'error',
+                    versions
+                })) 
+            })
+    }, [])
 
-  return state
+    return state
 }

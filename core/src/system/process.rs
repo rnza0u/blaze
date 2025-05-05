@@ -1,3 +1,6 @@
+use anyhow::{anyhow, Context};
+use blaze_common::error::Result;
+use shared_child::SharedChild;
 use std::{
     collections::HashMap,
     fmt::Display,
@@ -7,9 +10,6 @@ use std::{
     sync::{RwLock, RwLockWriteGuard},
     thread::JoinHandle,
 };
-use anyhow::{anyhow, Context};
-use blaze_common::error::Result;
-use shared_child::SharedChild;
 
 use super::thread::{join, thread};
 

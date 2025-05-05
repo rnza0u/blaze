@@ -1,5 +1,5 @@
 use anyhow::bail;
-use rand::{thread_rng, RngCore};
+use rand::{rng, RngCore};
 use std::{
     convert::identity,
     fmt::Display,
@@ -191,7 +191,7 @@ impl TargetExecution {
                     }
                 }
 
-                let nonce = thread_rng().next_u64();
+                let nonce = rng().next_u64();
                 nonce.hash(&mut hasher_before_nonce);
                 let new_hash = hasher_before_nonce.finish();
                 context.cache.cache(

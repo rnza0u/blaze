@@ -50,7 +50,7 @@ pub mod system_time_as_timestamps {
 
         struct U64Visitor;
 
-        impl<'de> Visitor<'de> for U64Visitor {
+        impl Visitor<'_> for U64Visitor {
             type Value = u64;
 
             fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {

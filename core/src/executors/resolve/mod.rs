@@ -26,7 +26,7 @@ use blaze_common::{
 };
 use loader::{get_loader_for_executor_kind, ExecutorWithMetadata};
 use possibly::possibly;
-use rand::{thread_rng, RngCore};
+use rand::{rng, RngCore};
 use resolver::{ExecutorResolution, ExecutorUpdate, SourceInfo};
 use serde::{Deserialize, Serialize};
 use url::Url;
@@ -244,7 +244,7 @@ fn resolve_custom_executor(
 
             let nonce = new_source
                 .is_some()
-                .then(|| thread_rng().next_u64())
+                .then(|| rng().next_u64())
                 .unwrap_or(cached_metadata.nonce);
 
             (
@@ -281,7 +281,7 @@ fn resolve_custom_executor(
                 executor,
                 metadata: load_metadata,
             } = loader.load_from_src(&source.root)?;
-            let nonce = thread_rng().next_u64();
+            let nonce = rng().next_u64();
 
             context
                 .logger

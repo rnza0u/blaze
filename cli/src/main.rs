@@ -19,7 +19,7 @@ fn main() {
         eprintln!("❌ Blaze command failed !");
         eprintln!();
 
-        eprintln!("Error: {}", err);
+        eprintln!("Error: {err}");
         eprintln!();
 
         eprintln!("Trace:");

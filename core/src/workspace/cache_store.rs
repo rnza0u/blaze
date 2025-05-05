@@ -7,7 +7,6 @@ use std::{
 use anyhow::Context;
 use blaze_common::error::Result;
 
-use fs4::fs_std::FileExt;
 use serde::{de::DeserializeOwned, Serialize};
 use xxhash_rust::xxh3;
 
@@ -32,7 +31,7 @@ impl CacheStore {
             .open(&file_path)
             .with_context(|| format!("could not open cache entry at {}", file_path.display()))?;
 
-        file.lock_exclusive()?;
+        file.lock()?;
         file.set_len(0)?;
         ciborium::into_writer(value, &file)?;
         file.unlock()?;

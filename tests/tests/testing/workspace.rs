@@ -2,7 +2,7 @@
 
 use blaze_core::time::now;
 use filetime::{set_file_atime, set_file_mtime, FileTime};
-use rand::{distributions::Alphanumeric, Rng};
+use rand::{distr::Alphanumeric, Rng};
 use std::{
     collections::BTreeMap,
     panic::{catch_unwind, UnwindSafe},
@@ -136,7 +136,7 @@ pub fn with_test_workspace<F: FnOnce(&Path) + UnwindSafe>(
 fn random_workspace_name() -> String {
     format!(
         "blaze_test_workspace_{}",
-        &rand::thread_rng()
+        &rand::rng()
             .sample_iter(&Alphanumeric)
             .take(12)
             .map(char::from)
