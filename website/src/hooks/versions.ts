@@ -3,7 +3,7 @@ import { listVersions } from '../services/versions'
 
 const LATEST = 'latest'
 
-type BuildsState = 
+type VersionsState = 
   (|Readonly<{
       status: 'loading'
   }>
@@ -18,7 +18,7 @@ type BuildsState =
   }>
 
 export function useVersions(){
-    const [state, setState] = useState<BuildsState>({
+    const [state, setState] = useState<VersionsState>({
         status: 'loading',
         versions: [LATEST]
     })
@@ -30,6 +30,7 @@ export function useVersions(){
                 versions: [LATEST, ...versions]
             }))
             .catch(error => {
+                console.error(error)
                 setState(({ versions }) => ({
                     error,
                     status: 'error',

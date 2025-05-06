@@ -1,4 +1,4 @@
-export default [
+export const projectVariables = [
     {
         path: 'project.root',
         description: 'Absolute path to the project root directory.',
@@ -9,4 +9,4 @@ export default [
         description: 'The name of the project, as declared in your workspace configuration file.',
         example: 'my-project'
     }
-]
+] as const

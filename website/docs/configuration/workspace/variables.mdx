@@ -8,14 +8,14 @@ tags:
     - Variables
 ---
 
-import globals from '@site/docs/variables/globals'
-import workspaceVariables from '@site/docs/variables/workspace'
-import customVariables from '@site/docs/variables/vars'
+import { globalVariables } from '@site/docs/variables/globals'
+import { workspaceVariables } from '@site/docs/variables/workspace'
+import { userVariables } from '@site/docs/variables/vars'
 
-import SubstitutionVariables from '@site/src/components/SubstitutionVariables'
+import { SubstitutionVariables } from '@site/src/components/SubstitutionVariables'
 
 <SubstitutionVariables vars={[
-    ...customVariables,
+    ...userVariables,
     ...workspaceVariables,
-    ...globals
+    ...globalVariables
 ]}></SubstitutionVariables>

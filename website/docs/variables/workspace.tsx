@@ -1,4 +1,6 @@
-export default [
+import React from 'react'
+
+export const workspaceVariables = [
     {
         path: 'workspace.root',
         description: <>Absolute path to the workspace root directory. Use <code>root</code> instead.</>
@@ -24,4 +26,4 @@ export default [
         description: 'Project reference relative path, from the workspace root directory.',
         example: 'path/to/project-1'
     }
-]
+] as const
