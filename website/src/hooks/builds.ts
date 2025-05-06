@@ -1,71 +1,71 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from 'react'
 
-import { downloadsServer } from "../services/util";
+import { downloadsServer } from '../services/util'
 
 export type Build = Readonly<{
-  checksum: string;
-  version: string;
-  size: number;
-}>;
+    checksum: string;
+    version: string;
+    size: number;
+}>
 
 export async function listBuilds(version: string): Promise<Build[]> {
-  const response = await fetch(downloadsServer(`/versions/${version}/builds`));
-  return await response.json();
+    const response = await fetch(downloadsServer(`/versions/${version}/builds`))
+    return await response.json()
 }
 
 type BuildStateStatus =
   | Readonly<{
-    status: "loading";
+      status: 'loading';
   }>
   | Readonly<{
-    status: "error";
-    error: unknown;
+      status: 'error';
+      error: unknown;
   }>
   | Readonly<{
-    status: "ready";
-    builds: readonly Build[];
-  }>;
+      status: 'ready';
+      builds: readonly Build[];
+  }>
 
 type BuildsState =
   & BuildStateStatus
   & Readonly<{
-    loadVersion(version: string): void;
-  }>;
+      loadVersion(version: string): void;
+  }>
 
 export function useBuilds(initialVersion: string): BuildsState {
-  const abortController = useMemo(() => new AbortController(), []);
+    const abortController = useMemo(() => new AbortController(), [])
 
-  const [builds, setBuilds] = useState<BuildStateStatus>({
-    status: "loading",
-  });
-
-  function load(version: string): void {
-    setBuilds({ status: "loading" });
-    fetch(downloadsServer(`/versions/${version}/builds`), {
-      signal: abortController.signal,
+    const [builds, setBuilds] = useState<BuildStateStatus>({
+        status: 'loading',
     })
-      .then((response) => response.json())
-      .then((builds) =>
-        setBuilds({
-          status: "ready",
-          builds: builds,
+
+    function load(version: string): void {
+        setBuilds({ status: 'loading' })
+        fetch(downloadsServer(`/versions/${version}/builds`), {
+            signal: abortController.signal,
         })
-      )
-      .catch((error) => {
-        if (error instanceof DOMException && error.name === "AbortError") {
-          return;
-        }
-        setBuilds({ status: "error", error });
-      });
-  }
+            .then((response) => response.json())
+            .then((builds) =>
+                setBuilds({
+                    status: 'ready',
+                    builds: builds,
+                })
+            )
+            .catch((error) => {
+                if (error instanceof DOMException && error.name === 'AbortError') {
+                    return
+                }
+                setBuilds({ status: 'error', error })
+            })
+    }
 
-  useEffect(() => load(initialVersion), []);
+    useEffect(() => load(initialVersion), [])
 
-  return {
-    ...builds,
-    loadVersion: (version) => {
-      abortController.abort();
-      load(version);
-    },
-  };
+    return {
+        ...builds,
+        loadVersion: (version) => {
+            abortController.abort()
+            load(version)
+        },
+    }
 }
