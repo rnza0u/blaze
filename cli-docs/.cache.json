@@ -1,4 +1,5 @@
 [
     "dist",
-    "target"
+    "target",
+    "Cargo.lock"
 ]
