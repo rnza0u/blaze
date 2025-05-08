@@ -198,7 +198,7 @@ impl ExecutorResolver for GitHeadlessResolver<'_> {
 
         remote.fetch(&refspecs, Some(&mut fetch_options), None)?;
 
-        logger.debug(format!("fetched refspecs {:?} for {}", refspecs, url));
+        logger.debug(format!("fetched refspecs {refspecs:?} for {url}"));
 
         let fetch_head = repository.find_reference("FETCH_HEAD")?;
         let mut head = repository.head()?;

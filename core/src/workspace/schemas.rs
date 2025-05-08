@@ -22,7 +22,7 @@ pub fn validate_json(validator: &Validator, value: &Value) -> Result<()> {
         ));
     }
 
-    if formatted_errors.len() > 0 {
+    if !formatted_errors.is_empty() {
         bail!(formatted_errors.join("\n"))
     }
 

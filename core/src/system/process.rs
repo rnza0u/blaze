@@ -125,7 +125,6 @@ impl Process {
                     process
                         .child
                         .take_stdout()
-                        .take()
                         .ok_or_else(|| anyhow!("could not take stdout for {process}."))?,
                     std::io::stdout(),
                 ),
@@ -133,7 +132,6 @@ impl Process {
                     process
                         .child
                         .take_stderr()
-                        .take()
                         .ok_or_else(|| anyhow!("could not take stderr for {process}."))?,
                     std::io::stderr(),
                 ),

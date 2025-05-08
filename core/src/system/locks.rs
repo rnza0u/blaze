@@ -75,7 +75,7 @@ impl ProcessLock {
     {
         match self.lockfile.try_lock() {
             Ok(()) => {}
-            Err(err) if matches!(err, TryLockError::WouldBlock) => {
+            Err(TryLockError::WouldBlock) => {
                 if let Some(on_wait) = self.on_wait {
                     on_wait();
                 }

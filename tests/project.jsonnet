@@ -61,7 +61,17 @@ local testTargets = {
             cache: {
                 invalidateWhen: {
                     inputChanges: [
-                        'tests/**', 
+                        {
+                            pattern: 'tests/**',
+                            exclude: [
+                                'tests/fixtures/executors/node-checker/build_hash',
+                                'tests/fixtures/executors/node-checker/package-lock.json',
+                                'tests/fixtures/executors/node-checker/node_modules',
+                                'tests/fixtures/executors/rust-checker/build_hash',
+                                'tests/fixtures/executors/rust-checker/Cargo.lock',
+                                'tests/fixtures/executors/rust-checker/target',
+                            ]
+                        }, 
                         'Cargo.toml', 
                         'Cargo.lock'
                     ]
@@ -106,16 +116,19 @@ local testTargets = {
                 commands: (if blaze.vars.lint.fix then [
                     {
                         program: 'cargo',
-                        arguments: cargoArgs + ['fmt']
+                        arguments: cargoArgs + ['fmt'],
+                        environment: LocalEnv(targets.dev)
                     }
                 ] else []) + [
                     {
                         program: 'cargo',
-                        arguments: cargoArgs + ['check']
+                        arguments: cargoArgs + ['check'],
+                        environment: LocalEnv(targets.dev)
                     },
                     {
                         program: 'cargo',
-                        arguments: cargoArgs + ['clippy', '--no-deps'] + (if blaze.vars.lint.fix then ['--fix', '--allow-dirty'] else [])
+                        arguments: cargoArgs + ['clippy', '--no-deps'] + (if blaze.vars.lint.fix then ['--fix', '--allow-dirty'] else []),
+                        environment: LocalEnv(targets.dev)
                     }
                 ]
             },

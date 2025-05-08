@@ -3,7 +3,7 @@ name = "blaze-cli"
 description = "A fast, simple and flexible build system."
 repository = "https://github.com/rnza0u/blaze.git"
 homepage = "https://blaze-monorepo.dev"
-version = "0.3.0"
+version = "0.2.16"
 edition = "2021"
 license = "MIT"
 keywords = ["monorepo", "integration", "build"]
@@ -26,8 +26,8 @@ strum = "0.27.1"
 strum_macros = "0.27.1"
 build-time = "0.1"
 # internal dependencies
-blaze-common = { version = "0.3.0", path = "../common" }
-blaze-core = { version = "0.3.0", path = "../core" }
+blaze-common = { version = "0.2.16", path = "../common" }
+blaze-core = { version = "0.2.16", path = "../core" }
 
 [profile.release]
 strip = true

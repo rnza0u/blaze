@@ -242,10 +242,11 @@ fn resolve_custom_executor(
                 executor
             };
 
-            let nonce = new_source
-                .is_some()
-                .then(|| rng().next_u64())
-                .unwrap_or(cached_metadata.nonce);
+            let nonce = if new_source.is_some() {
+                rng().next_u64()
+            } else {
+                cached_metadata.nonce
+            };
 
             (
                 CustomExecutorResolution {

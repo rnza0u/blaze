@@ -46,7 +46,7 @@ pub fn infer_configuration_file_path<P: AsRef<Path>, S: AsRef<str>>(
         let (main_ext, other_ext) = get_format_extensions(format);
 
         for ext in vec![main_ext].into_iter().chain(other_ext) {
-            let configuration_file_path = dir_ref.join(format!("{}.{}", filename_ref, ext));
+            let configuration_file_path = dir_ref.join(format!("{filename_ref}.{ext}"));
             match std::fs::metadata(&configuration_file_path) {
                 Ok(_) => return Ok(Some((format, configuration_file_path))),
                 Err(err) => match err.kind() {

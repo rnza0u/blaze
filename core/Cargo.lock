@@ -119,7 +119,7 @@ checksum = "5c8214115b7bf84099f1309324e63141d4c5d7cc26862f97a0a857dbefe165bd"
 
 [[package]]
 name = "blaze-common"
-version = "0.3.0"
+version = "0.2.16"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -133,7 +133,7 @@ dependencies = [
 
 [[package]]
 name = "blaze-core"
-version = "0.3.0"
+version = "0.2.16"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -176,7 +176,7 @@ dependencies = [
 
 [[package]]
 name = "blaze-devkit"
-version = "0.3.0"
+version = "0.2.16"
 dependencies = [
  "blaze-common",
  "hash-value",
@@ -185,7 +185,7 @@ dependencies = [
 
 [[package]]
 name = "blaze-rust-bridge"
-version = "0.3.0"
+version = "0.2.16"
 dependencies = [
  "anyhow",
  "blaze-common",
