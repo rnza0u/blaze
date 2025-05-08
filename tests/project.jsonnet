@@ -15,8 +15,7 @@ local testTargets = {
             commands: [
                 {
                     program: if useCross then 'cross' else 'cargo',
-                    arguments: cargoArgs + [
-                        '+nightly',
+                    arguments: ['+nightly'] + cargoArgs + [
                         'test', 
                         '--no-fail-fast'
                     ] + (if blaze.vars.tests != null 
