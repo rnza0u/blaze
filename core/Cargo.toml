@@ -17,7 +17,7 @@ serde_yaml = "0.9"
 rand = "0.9"
 strum = "0.27"
 strum_macros = "0.27"
-colored = "2.1"
+colored = "3.0"
 dotenvy = "0.15"
 regex = "1.10"
 url = "2.5"
@@ -62,7 +62,7 @@ version = "0.5.0-pre95"
 features = ["exp-destruct", "exp-object-iteration", "exp-null-coaelse"]
 
 [dependencies.handlebars]
-version = "6.1.0"
+version = "6.3"
 features = ["string_helpers", "script_helper"]
 
 [build-dependencies]

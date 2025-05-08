@@ -4,23 +4,41 @@ local workspaceDependencies = [
     { project: 'common', crate: 'blaze-common' }
 ];
 
+local cargoArgs = (if blaze.vars.ci then ['--locked'] else []);
+
 {
     targets: {
+        'generate-lockfile': {
+            executor: 'std:commands',
+            cache: {
+                invalidateWhen: {
+                    inputChanges: ['Cargo.toml'],
+                    outputChanges: ['Cargo.lock']
+                }
+            },
+            options: {
+                commands: [
+                    {
+                        program: 'cargo',
+                        arguments: cargoArgs + ['generate-lockfile']
+                    }
+                ]
+            }
+        },
         source: {
             cache: {
                 invalidateWhen: {
                     inputChanges: [
                         'src/**', 
-                        'Cargo.toml'
-                    ],
-                    outputChanges: ['Cargo.lock']
+                    ]
                 }
             },
             dependencies: [
                 {
                     projects: [dep.project for dep in workspaceDependencies],
                     target: 'source'
-                }
+                },
+                'generate-lockfile'
             ]
         },
         lint: {
@@ -30,16 +48,16 @@ local workspaceDependencies = [
                 commands: (if blaze.vars.lint.fix then [
                     {
                         program: 'cargo',
-                        arguments: ['fmt']
+                        arguments: cargoArgs + ['fmt']
                     }
                 ] else []) + [
                     {
                         program: 'cargo',
-                        arguments: ['check']
+                        arguments: cargoArgs + ['check']
                     },
                     {
                         program: 'cargo',
-                        arguments: ['clippy', '--no-deps'] + (if blaze.vars.lint.fix then ['--fix', '--allow-dirty'] else [])
+                        arguments: cargoArgs + ['clippy', '--no-deps'] + (if blaze.vars.lint.fix then ['--fix', '--allow-dirty'] else [])
                     }
                 ]
             },
@@ -71,7 +89,7 @@ local workspaceDependencies = [
                 commands: [
                     {
                         program: 'cargo',
-                        arguments: ['clean']
+                        arguments: cargoArgs + ['clean']
                     }
                 ]
             }

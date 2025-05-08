@@ -1,17 +1,35 @@
 local blaze = std.extVar('blaze');
 
+local cargoArgs = (if blaze.vars.ci then ['--locked'] else []);
+
 {
     targets: {
+        'generate-lockfile': {
+            executor: 'std:commands',
+            cache: {
+                invalidateWhen: {
+                    inputChanges: ['Cargo.toml'],
+                    outputChanges: ['Cargo.lock']
+                }
+            },
+            options: {
+                commands: [
+                    {
+                        program: 'cargo',
+                        arguments: cargoArgs + ['generate-lockfile']
+                    }
+                ]
+            }
+        },
         source: {
             cache: {
                 invalidateWhen: {
                     inputChanges: [
                         'src/**',
-                        'Cargo.toml'
-                    ],
-                    outputChanges: ['Cargo.lock']
+                    ]
                 }
-            }
+            },
+            dependencies: ['generate-lockfile']
         },
         lint: {
             executor: 'std:commands',
@@ -19,16 +37,16 @@ local blaze = std.extVar('blaze');
                 commands: (if blaze.vars.lint.fix then [
                     {
                         program: 'cargo',
-                        arguments: ['fmt']
+                        arguments: cargoArgs + ['fmt']
                     }
                 ] else []) + [
                     {
                         program: 'cargo',
-                        arguments: ['clippy', '--no-deps'] + (if blaze.vars.lint.fix then ['--fix', '--allow-dirty'] else [])
+                        arguments: cargoArgs + ['clippy', '--no-deps'] + (if blaze.vars.lint.fix then ['--fix', '--allow-dirty'] else [])
                     },
                     {
                         program: 'cargo',
-                        arguments: ['check']
+                        arguments: cargoArgs + ['check']
                     }
                 ]
             }
@@ -50,7 +68,7 @@ local blaze = std.extVar('blaze');
                 commands: [
                     {
                         program: 'cargo',
-                        arguments: ['clean']
+                        arguments: cargoArgs + ['clean']
                     }
                 ]
             }
