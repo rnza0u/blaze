@@ -76,12 +76,6 @@ local deploymentsByTarget = {
   targets: buildsByTarget + deploymentsByTarget + {
     'generate-lockfile': {
       executor: 'std:commands',
-      cache: {
-        invalidateWhen: {
-          inputChanges: ['Cargo.toml'],
-          outputChanges: ['Cargo.lock'],
-        },
-      },
       options: {
         commands: [
           {
@@ -96,10 +90,12 @@ local deploymentsByTarget = {
         invalidateWhen: {
           inputChanges: [
             'src/**',
+            'Cargo.toml',
+            'Cargo.lock'
           ],
         },
       },
-      dependencies: [dep.project + ':source' for dep in workspaceDependencies] + ['generate-lockfile'],
+      dependencies: [dep.project + ':source' for dep in workspaceDependencies],
     },
     run: {
       executor: 'std:commands',

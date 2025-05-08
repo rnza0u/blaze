@@ -6,12 +6,6 @@ local cargoArgs = (if blaze.vars.ci then ['--locked'] else []);
     targets: {
         'generate-lockfile': {
             executor: 'std:commands',
-            cache: {
-                invalidateWhen: {
-                    inputChanges: ['Cargo.toml'],
-                    outputChanges: ['Cargo.lock']
-                }
-            },
             options: {
                 commands: [
                     {
@@ -26,10 +20,11 @@ local cargoArgs = (if blaze.vars.ci then ['--locked'] else []);
                 invalidateWhen: {
                     inputChanges: [
                         'src/**',
+                        'Cargo.toml',
+                        'Cargo.lock'
                     ]
                 }
-            },
-            dependencies: ['generate-lockfile']
+            }
         },
         lint: {
             executor: 'std:commands',

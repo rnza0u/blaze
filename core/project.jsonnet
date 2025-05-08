@@ -21,12 +21,6 @@ local cargoArgs = (if blaze.vars.ci then ['--locked'] else []);
   targets: {
     'generate-lockfile': {
         executor: 'std:commands',
-        cache: {
-            invalidateWhen: {
-                inputChanges: ['Cargo.toml'],
-                outputChanges: ['Cargo.lock']
-            }
-        },
         options: {
             commands: [
                 {
@@ -65,7 +59,9 @@ local cargoArgs = (if blaze.vars.ci then ['--locked'] else []);
         invalidateWhen: {
           inputChanges: [
             'src/**',
-            'build.rs'
+            'build.rs',
+            'Cargo.toml',
+            'Cargo.lock'
           ]
         }
       },
@@ -77,8 +73,7 @@ local cargoArgs = (if blaze.vars.ci then ['--locked'] else []);
         {
           projects: npmDependencies,
           target: 'build',
-        },
-        'generate-lockfile'
+        }
       ]
     },
     publish: {

@@ -48,12 +48,6 @@ local testTargets = {
     targets: testTargets + {
         'generate-lockfile': {
             executor: 'std:commands',
-            cache: {
-                invalidateWhen: {
-                    inputChanges: ['Cargo.toml'],
-                    outputChanges: ['Cargo.lock']
-                }
-            },
             options: {
                 commands: [
                     {
@@ -64,13 +58,20 @@ local testTargets = {
             }
         },
         source: {
-            cache: {},
+            cache: {
+                invalidateWhen: {
+                    inputChanges: [
+                        'tests/**', 
+                        'Cargo.toml', 
+                        'Cargo.lock'
+                    ]
+                }
+            },
             dependencies: [
                 {
                     projects: [dep.project for dep in workspaceDependencies],
                     target: 'source'
-                },
-                'generate-lockfile'
+                }
             ]
         },
         publish: {
