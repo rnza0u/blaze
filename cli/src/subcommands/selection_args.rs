@@ -27,7 +27,7 @@ fn exclude_long_help() -> String {
 const TAGS_HELP: &str = "Tags to use when selecting projects.";
 
 fn tags_long_help() -> String {
-    format!("{} All projects that have at least one tag corresponding to one of the provided tags will be selected. You can pass multiple tags delimited by commas (for example, tag1,tag2,tag3).", TAGS_HELP)
+    format!("{TAGS_HELP} All projects that have at least one tag corresponding to one of the provided tags will be selected. You can pass multiple tags delimited by commas (for example, tag1,tag2,tag3).")
 }
 
 #[derive(Parser, Debug)]

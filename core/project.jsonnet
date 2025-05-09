@@ -15,26 +15,39 @@ local npmDependencies = [
   'schemas'
 ];
 
+local cargoArgs = (if blaze.vars.ci then ['--locked'] else []);
+
 {
   targets: {
+    'generate-lockfile': {
+        executor: 'std:commands',
+        options: {
+            commands: [
+                {
+                    program: 'cargo',
+                    arguments: cargoArgs + ['generate-lockfile']
+                }
+            ]
+        }
+    },
     lint: {
       executor: 'std:commands',
       options: {
         commands: (if blaze.vars.lint.fix then [
             {
                 program: 'cargo',
-                arguments: ['fmt'],
+                arguments: cargoArgs + ['fmt'],
                 environment: LocalEnv(targets.dev)
             }
         ] else []) + [
             {
                 program: 'cargo',
-                arguments: ['check'],
+                arguments: cargoArgs + ['check'],
                 environment: LocalEnv(targets.dev)
             },
             {
                 program: 'cargo',
-                arguments: ['clippy'],
+                arguments: cargoArgs + ['clippy', '--no-deps'] + (if blaze.vars.lint.fix then ['--fix', '--allow-dirty'] else []),
                 environment: LocalEnv(targets.dev)
             }
         ]
@@ -46,10 +59,10 @@ local npmDependencies = [
         invalidateWhen: {
           inputChanges: [
             'src/**',
+            'build.rs',
             'Cargo.toml',
-            'build.rs'
-          ],
-          outputChanges: ['Cargo.lock']
+            'Cargo.lock'
+          ]
         }
       },
       dependencies: [
@@ -90,7 +103,7 @@ local npmDependencies = [
         commands: [
           {
             program: 'cargo',
-            arguments: ['clean']
+            arguments: cargoArgs + ['clean']
           }
         ]
       }

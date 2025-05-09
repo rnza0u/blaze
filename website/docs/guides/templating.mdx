@@ -3,8 +3,8 @@ id: templating
 title: Templating features
 ---
 
-import globals from '@site/docs/variables/globals'
-import SubstitutionVariables from '@site/src/components/SubstitutionVariables'
+import { globalVariables } from '@site/docs/variables/globals'
+import { SubstitutionVariables } from '@site/src/components/SubstitutionVariables'
 
 Some useful templating features are provided when writing configuration files such as :
 
@@ -45,7 +45,7 @@ The `vars` prefix indicates that you want to interpolate a [custom variable](#cu
 
 These variables are always available (in both workspace and project configuration files) :
 
-<SubstitutionVariables vars={globals}/>
+<SubstitutionVariables vars={globalVariables}/>
 
 ## Dynamic configuration
 

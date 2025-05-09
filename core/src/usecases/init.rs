@@ -94,9 +94,9 @@ pub fn init<R: AsRef<Path>>(root: R, options: InitOptions, globals: GlobalOption
             &[
                 Cow::Borrowed(USER_ENV_FILE),
                 ".blaze/*".into(),
-                format!("!{}", HELPERS_FOLDER).into(),
-                format!("!{}.*", VARIABLES_FILE_PATH).into(),
-                "!.blaze/jpath".into(),
+                format!("!{HELPERS_FOLDER}").into(),
+                format!("!{VARIABLES_FILE_PATH}.*").into(),
+                "!.blaze/.jpath".into(),
                 "user-variables.*".into(),
             ],
         )?;

@@ -5,26 +5,17 @@ local finalTargets = std.filter(function(name) targets[name].rustTriple != null,
 
 local workspaceDependencies = [{ project: 'core', crate: 'blaze-core' }];
 
+local cargoArgs = (if blaze.vars.ci then ['--locked'] else []);
+
 local testTargets = {
     ['run-' + name]: {
         local useCross = targets[name].rustTriple != null,
         executor: 'std:commands',
-        cache: {
-            invalidateWhen: {
-                inputChanges: [
-                    {
-                        pattern: 'tests/**',
-                        exclude: ['**/node_modules', '**/target']
-                    }
-                ]
-            }
-        },
         options: {
             commands: [
                 {
                     program: if useCross then 'cross' else 'cargo',
-                    arguments: [
-                        '+nightly',
+                    arguments: ['+nightly'] + cargoArgs + [
                         'test', 
                         '--no-fail-fast'
                     ] + (if blaze.vars.tests != null 
@@ -54,8 +45,37 @@ local testTargets = {
 
 {
     targets: testTargets + {
+        'generate-lockfile': {
+            executor: 'std:commands',
+            options: {
+                commands: [
+                    {
+                        program: 'cargo',
+                        arguments: cargoArgs + ['generate-lockfile']
+                    }
+                ]
+            }
+        },
         source: {
-            cache: {},
+            cache: {
+                invalidateWhen: {
+                    inputChanges: [
+                        {
+                            pattern: 'tests/**',
+                            exclude: [
+                                'tests/fixtures/executors/node-checker/build_hash',
+                                'tests/fixtures/executors/node-checker/package-lock.json',
+                                'tests/fixtures/executors/node-checker/node_modules',
+                                'tests/fixtures/executors/rust-checker/build_hash',
+                                'tests/fixtures/executors/rust-checker/Cargo.lock',
+                                'tests/fixtures/executors/rust-checker/target',
+                            ]
+                        }, 
+                        'Cargo.toml', 
+                        'Cargo.lock'
+                    ]
+                }
+            },
             dependencies: [
                 {
                     projects: [dep.project for dep in workspaceDependencies],
@@ -84,11 +104,9 @@ local testTargets = {
             ]
         },
         run: {
-            cache: {},
             dependencies: ['run-dev']
         },
         'run-all': {
-            cache: {},
             dependencies: ['run-' + target for target in finalTargets]
         },
         lint: {
@@ -97,16 +115,19 @@ local testTargets = {
                 commands: (if blaze.vars.lint.fix then [
                     {
                         program: 'cargo',
-                        arguments: ['fmt']
+                        arguments: cargoArgs + ['fmt'],
+                        environment: LocalEnv(targets.dev)
                     }
                 ] else []) + [
                     {
                         program: 'cargo',
-                        arguments: ['check']
+                        arguments: cargoArgs + ['check'],
+                        environment: LocalEnv(targets.dev)
                     },
                     {
                         program: 'cargo',
-                        arguments: ['clippy', '--no-deps'] + (if blaze.vars.lint.fix then ['--fix', '--allow-dirty'] else [])
+                        arguments: cargoArgs + ['clippy', '--no-deps'] + (if blaze.vars.lint.fix then ['--fix', '--allow-dirty'] else []),
+                        environment: LocalEnv(targets.dev)
                     }
                 ]
             },
@@ -127,7 +148,7 @@ local testTargets = {
                     },
                     {
                         program: 'cargo',
-                        arguments: ['clean'],
+                        arguments: cargoArgs + ['clean'],
                         cwd: blaze.project.root + '/tests/fixtures/executors/rust-checker'
                     }
                 ]
@@ -139,7 +160,7 @@ local testTargets = {
                 commands: [
                     {
                         program: 'cargo',
-                        arguments: ['clean']
+                        arguments: cargoArgs + ['clean']
                     }
                 ]
             }

@@ -4,7 +4,7 @@ use blaze_core::{
     common::{parallelism::Parallelism, selector::ProjectSelector},
     run, RunOptions, SelectorSource,
 };
-use rand::{distributions::Alphanumeric, thread_rng, Rng};
+use rand::{distr::Alphanumeric, rng, Rng};
 use serde_json::json;
 use testing::{Executions, ExpectedExecution};
 
@@ -59,7 +59,7 @@ fn setup_server(id: usize, server_path: &str) -> (String, serde_json::Value) {
 fn run_parallel_targets_infinite() {
     let fifo_path = std::env::temp_dir().join(format!(
         "blaze_test_fifo_{}",
-        thread_rng()
+        rng()
             .sample_iter(&Alphanumeric)
             .take(12)
             .map(char::from)

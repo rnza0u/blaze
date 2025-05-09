@@ -1,9 +1,9 @@
 use std::path::Path;
 
-use blaze_common::{error::Result, value::Value, workspace::Workspace};
+use blaze_common::{error::Result, executor::ExecutorKind, value::Value};
 
 use crate::executors::{
-    node::loaders::LocalNodeExecutorLoader, rust::loaders::LocalRustExecutorLoader, DynExecutor,
+    node::loader::NodeExecutorLoader, rust::loaders::RustExecutorLoader, DynExecutor,
 };
 
 pub struct ExecutorWithMetadata {
@@ -17,24 +17,9 @@ pub trait ExecutorLoader {
     fn load_from_metadata(&self, metadata: &Value) -> Result<DynExecutor>;
 }
 
-pub struct LoaderContext<'a> {
-    pub workspace: &'a Workspace,
-}
-
-#[allow(unused)]
-pub enum ExecutorLoadStrategy {
-    RustLocal,
-    RustCrate,
-    NodeLocal,
-    NodePackage,
-}
-
-impl ExecutorLoadStrategy {
-    pub fn get_loader(&self, context: LoaderContext<'_>) -> Box<dyn ExecutorLoader> {
-        match self {
-            Self::NodeLocal => Box::new(LocalNodeExecutorLoader),
-            Self::RustLocal => Box::new(LocalRustExecutorLoader::new(context.workspace.root())),
-            _ => todo!(),
-        }
+pub fn get_loader_for_executor_kind(kind: ExecutorKind) -> Box<dyn ExecutorLoader> {
+    match kind {
+        ExecutorKind::Node => Box::new(NodeExecutorLoader),
+        ExecutorKind::Rust => Box::new(RustExecutorLoader),
     }
 }

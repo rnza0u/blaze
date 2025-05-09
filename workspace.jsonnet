@@ -72,6 +72,7 @@
     }
   },
   settings: {
+    defaultSelector: ['cli'],
     logLevel: 'Debug',
     parallelism: 'All'
   }

@@ -1,10 +1,11 @@
+pub mod builder;
+pub mod cargo;
 pub mod file_system;
 pub mod git;
 pub mod git_common;
 pub mod http_git;
 pub mod kinds;
 pub mod loader;
-#[allow(dead_code)]
 pub mod npm;
 pub mod resolver;
 pub mod ssh_git;
@@ -23,8 +24,10 @@ use blaze_common::{
     value::Value,
     workspace::Workspace,
 };
+use loader::{get_loader_for_executor_kind, ExecutorWithMetadata};
 use possibly::possibly;
-use rand::{thread_rng, RngCore};
+use rand::{rng, RngCore};
+use resolver::{ExecutorResolution, ExecutorUpdate, SourceInfo};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -180,7 +183,9 @@ pub struct CustomExecutorResolution {
 
 #[derive(Serialize, Deserialize)]
 pub struct ExecutorCacheMetadata {
+    pub source_info: SourceInfo,
     pub resolution_state: Value,
+    pub load_metadata: Value,
     pub nonce: u64,
 }
 
@@ -190,7 +195,7 @@ fn resolve_custom_executor(
     package_id: u64,
     context: CustomResolutionContext<'_>,
 ) -> Result<CustomExecutorResolution> {
-    let resolver: Box<dyn ExecutorResolver> = resolver_for_location(location.clone(), context);
+    let resolver = resolver_for_location(location.clone(), context)?;
 
     let state_key = format!("executors/{package_id}");
 
@@ -204,14 +209,13 @@ fn resolve_custom_executor(
         .transpose()
         .with_context(|| format!("failed to restore solution state for executor {url}"))?;
 
-    let maybe_current_nonce = maybe_cached_metadata
-        .as_ref()
-        .map(|metadata| metadata.nonce);
-
-    let (executor, resolution_state, cache_state) = match maybe_cached_metadata {
+    let (resolution, new_cached_metadata) = match maybe_cached_metadata {
         Some(cached_metadata) => {
             context.logger.debug(format!("{url} exists in cache"));
-            let update = resolver
+            let ExecutorUpdate {
+                new_state: new_resolution_state,
+                new_source,
+            } = resolver
                 .update(url, &cached_metadata.resolution_state)
                 .with_context(|| {
                     format!(
@@ -219,54 +223,94 @@ fn resolve_custom_executor(
                     )
                 })?;
 
+            let mut new_load_metadata = None;
+            let executor = if let Some(source_info) = &new_source {
+                let loader = get_loader_for_executor_kind(source_info.kind);
+                let ExecutorWithMetadata { executor, metadata } =
+                    loader.load_from_src(&source_info.root)?;
+                context
+                    .logger
+                    .debug(format!("{url} has been updated from source"));
+                let _ = new_load_metadata.insert(metadata);
+                executor
+            } else {
+                let loader = get_loader_for_executor_kind(cached_metadata.source_info.kind);
+                let executor = loader.load_from_metadata(&cached_metadata.load_metadata)?;
+                context
+                    .logger
+                    .debug(format!("{url} is up to date and was resolved from cache"));
+                executor
+            };
+
+            let nonce = if new_source.is_some() {
+                rng().next_u64()
+            } else {
+                cached_metadata.nonce
+            };
+
             (
-                update.executor,
-                update.new_state.unwrap_or(cached_metadata.resolution_state),
-                if update.updated {
-                    context.logger.debug(format!("{url} has been updated"));
-                    ExecutorCacheState::Updated
-                } else {
-                    context.logger.debug(format!("{url} is up to date"));
-                    ExecutorCacheState::Cached
+                CustomExecutorResolution {
+                    executor,
+                    nonce,
+                    state: if new_source.is_some() {
+                        ExecutorCacheState::Updated
+                    } else {
+                        ExecutorCacheState::Cached
+                    },
                 },
+                (new_source.is_some() || new_resolution_state.is_some()).then(|| {
+                    ExecutorCacheMetadata {
+                        source_info: new_source.unwrap_or(cached_metadata.source_info),
+                        nonce,
+                        load_metadata: new_load_metadata.unwrap_or(cached_metadata.load_metadata),
+                        resolution_state: new_resolution_state
+                            .unwrap_or(cached_metadata.resolution_state),
+                    }
+                }),
             )
         }
         None => {
-            let resolution = resolver
+            let ExecutorResolution {
+                source,
+                state: resolution_state,
+            } = resolver
                 .resolve(url)
                 .with_context(|| format!("failed to resolve executor {url}"))?;
 
-            context.logger.debug(format!("{url} was resolved"));
+            let loader = get_loader_for_executor_kind(source.kind);
+            let ExecutorWithMetadata {
+                executor,
+                metadata: load_metadata,
+            } = loader.load_from_src(&source.root)?;
+            let nonce = rng().next_u64();
+
+            context
+                .logger
+                .debug(format!("{url} was resolved and loaded from source"));
 
             (
-                resolution.executor,
-                resolution.state,
-                ExecutorCacheState::New,
+                CustomExecutorResolution {
+                    nonce,
+                    executor,
+                    state: ExecutorCacheState::New,
+                },
+                Some(ExecutorCacheMetadata {
+                    source_info: source,
+                    load_metadata,
+                    nonce,
+                    resolution_state,
+                }),
             )
         }
     };
 
-    let nonce = match cache_state {
-        ExecutorCacheState::Cached if maybe_current_nonce.is_some() => maybe_current_nonce.unwrap(),
-        _ => thread_rng().next_u64(),
-    };
-
-    if let Some(cache) = context.cache {
-        let next_metadata = ExecutorCacheMetadata {
-            nonce,
-            resolution_state,
-        };
-
+    if let Some((cache, metadata)) = context.cache.zip(new_cached_metadata) {
         cache
-            .cache(&state_key, &next_metadata)
+            .cache(&state_key, &metadata)
             .with_context(|| format!("failed to cache executor metadata for {url}"))?;
     }
 
-    Ok(CustomExecutorResolution {
-        executor,
-        nonce,
-        state: cache_state,
-    })
+    Ok(resolution)
 }
 
 pub fn get_executor_package_id(reference: &ExecutorReference) -> u64 {
@@ -281,21 +325,15 @@ pub fn get_executor_package_id(reference: &ExecutorReference) -> u64 {
                 Location::GitOverHttp {
                     transport,
                     git_options,
-                    authentication,
+                    ..
                 } => {
                     transport.headers().hash(&mut hasher);
                     git_options.checkout().hash(&mut hasher);
                     git_options.path().hash(&mut hasher);
-                    authentication.hash(&mut hasher);
                 }
-                Location::GitOverSsh {
-                    git_options,
-                    authentication,
-                    ..
-                } => {
+                Location::GitOverSsh { git_options, .. } => {
                     git_options.checkout().hash(&mut hasher);
                     git_options.path().hash(&mut hasher);
-                    authentication.hash(&mut hasher);
                 }
                 Location::TarballOverHttp {
                     transport,
@@ -308,11 +346,9 @@ pub fn get_executor_package_id(reference: &ExecutorReference) -> u64 {
                 Location::LocalFileSystem { .. } => {}
                 Location::Npm { options } => {
                     options.version().hash(&mut hasher);
-                    options.token().hash(&mut hasher);
                 }
                 Location::Cargo { options } => {
                     options.version().hash(&mut hasher);
-                    options.token().hash(&mut hasher);
                 }
                 Location::Git { options } => {
                     options.checkout().hash(&mut hasher);

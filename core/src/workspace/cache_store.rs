@@ -7,7 +7,6 @@ use std::{
 use anyhow::Context;
 use blaze_common::error::Result;
 
-use fs4::FileExt;
 use serde::{de::DeserializeOwned, Serialize};
 use xxhash_rust::xxh3;
 
@@ -32,9 +31,9 @@ impl CacheStore {
             .open(&file_path)
             .with_context(|| format!("could not open cache entry at {}", file_path.display()))?;
 
-        file.lock_exclusive()?;
+        file.lock()?;
         file.set_len(0)?;
-        serde_cbor::to_writer(&file, value)?;
+        ciborium::into_writer(value, &file)?;
         file.unlock()?;
 
         Ok(())
@@ -70,7 +69,8 @@ impl CacheStore {
         };
 
         file.lock_shared()?;
-        let object = serde_cbor::from_reader(&file);
+        let mut buffer = [0_u8; (1 << 10) * 16];
+        let object = ciborium::from_reader_with_buffer(&file, &mut buffer);
         file.unlock()?;
 
         Ok(Some(object.with_context(|| {

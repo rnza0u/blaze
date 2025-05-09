@@ -1,27 +1,53 @@
 local image = 'registry.rnzaou.me/blaze-downloads';
 local blaze = std.extVar('blaze');
 
+local cargoArgs = (if blaze.vars.ci then ['--locked'] else []);
+
 {
     targets: {
+        'generate-lockfile': {
+            executor: 'std:commands',
+            options: {
+                commands: [
+                    {
+                        program: 'cargo',
+                        arguments: cargoArgs + ['generate-lockfile']
+                    }
+                ]
+            }
+        },
+        source: {
+            cache: {
+                invalidateWhen: {
+                    inputChanges: [
+                        'src/**', 
+                        'fixtures/**',
+                        'Cargo.toml',
+                        'Cargo.lock'
+                    ]
+                }
+            }
+        },
         lint: {
             executor: 'std:commands',
             options: {
                 commands: (if blaze.vars.lint.fix then [
                     {
                         program: 'cargo',
-                        arguments: ['fmt']
+                        arguments: cargoArgs + ['fmt']
                     }
                 ] else []) + [
                     {
                         program: 'cargo',
-                        arguments: ['check']
+                        arguments: cargoArgs + ['check']
                     },
                     {
                         program: 'cargo',
-                        arguments: ['clippy']
+                        arguments: cargoArgs + ['clippy', '--no-deps'] + (if blaze.vars.lint.fix then ['--fix', '--allow-dirty'] else [])
                     }
                 ]
-            }
+            },
+            dependencies: ['source']
         },
         serve: {
             executor: 'std:commands',
@@ -29,7 +55,7 @@ local blaze = std.extVar('blaze');
                 commands: [
                     {
                         program: 'cargo',
-                        arguments: ['run'],
+                        arguments: cargoArgs + ['run'],
                         environment: {
                             WEBSITE_ORIGIN: 'http://localhost:3000',
                             RUST_BACKTRACE: '1',
@@ -39,7 +65,8 @@ local blaze = std.extVar('blaze');
                         }
                     }
                 ]
-            }
+            },
+            dependencies: ['source']
         },
         'build-bin': {
             executor: 'std:commands',
@@ -47,7 +74,7 @@ local blaze = std.extVar('blaze');
                 commands: [
                     {
                         program: 'cross',
-                        arguments: [
+                        arguments: cargoArgs + [
                             'build',
                             '--target', 
                             'x86_64-unknown-linux-musl',
@@ -115,7 +142,7 @@ local blaze = std.extVar('blaze');
                 commands: [
                     {
                         program: 'cargo',
-                        arguments: ['clean']
+                        arguments: cargoArgs + ['clean']
                     }
                 ]
             }

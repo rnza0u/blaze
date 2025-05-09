@@ -9,7 +9,7 @@ tags:
     - commands
 ---
 
-The `std:exec` executor is used to order to execute a file using a system provided shell.
+The `std:exec` executor is used to order to execute a file, optionally using a system provided shell.
 
 The file could be be :
 
@@ -21,7 +21,7 @@ Supported options are :
 - `program` *(required)*: Path to the file to execute. Relative paths will be treated as relative to the project's root directory.
 - `arguments`: A list of arguments that will be passed when executing the file. Defaults to an empty array.
 - `cwd`: Custom working directory to set for the spawned process.
-- `shell`: Used to specify a custom shell program to use. Works similarly as in the [`std:commands` executor](./commands#using-a-shell).
+- `shell`: Specifies a custom shell program to use when launching the file. This is useful when you are launching a script and you want Blaze to deal with passing shell specific options for this purpose. Syntax is the same as in the [`std:commands` executor](./commands#using-a-shell).
 - `quiet`: Disable process output.
 
 ```json

@@ -72,6 +72,7 @@ struct DependenciesResolution {
     selection: Option<Selection>,
     target: String,
     ancestors: Vec<(String, DependencyAccessor)>,
+    ancestors_set: HashSet<String>,
     depth: usize,
 }
 
@@ -170,6 +171,7 @@ impl ExecutionGraph {
             selection: Some(selection.clone()),
             target: target.to_owned(),
             ancestors: vec![],
+            ancestors_set: HashSet::new(),
             depth: 0,
         }]);
 
@@ -177,6 +179,7 @@ impl ExecutionGraph {
             selection,
             target,
             ancestors,
+            ancestors_set,
             depth,
         }) = resolutions.pop_front()
         {
@@ -191,7 +194,7 @@ impl ExecutionGraph {
                     for (name, project_ref) in &refs {
                         if !projects.contains_key(*name) {
                             projects.insert(
-                                name.to_string(),
+                                (*name).to_owned(),
                                 Arc::new(
                                     ProjectHandle::from_root(
                                         options.workspace.root().join(project_ref.path()),
@@ -221,11 +224,12 @@ impl ExecutionGraph {
                 if let Some(target_execution) = TargetExecution::try_new(project.clone(), &target) {
                     let double = target_execution.get_double();
 
-                    if let Some(circular_ancestor_index) = ancestors
-                        .iter()
-                        .position(|(ancestor, _)| &double == ancestor)
-                    {
-                        let mut chain = ancestors[circular_ancestor_index..]
+                    if ancestors_set.contains(&double) {
+                        let circular_ancestor_position = ancestors
+                            .iter()
+                            .position(|(ancestor, _)| &double == ancestor)
+                            .unwrap();
+                        let mut chain = ancestors[circular_ancestor_position..]
                             .iter()
                             .map(|(double, _)| double.as_str())
                             .collect::<Vec<_>>();
@@ -276,6 +280,8 @@ impl ExecutionGraph {
                                 dependency_index: i,
                             },
                         ));
+                        let mut next_ancestors_set = ancestors_set.clone();
+                        next_ancestors_set.insert(double.to_owned());
 
                         resolutions.push_back(DependenciesResolution {
                             selection: dependency.projects().cloned().map(|selector| {
@@ -283,6 +289,7 @@ impl ExecutionGraph {
                             }),
                             target: dependency.target().to_owned(),
                             ancestors: next_ancestors,
+                            ancestors_set: next_ancestors_set,
                             depth: depth + 1,
                         })
                     }
@@ -550,53 +557,6 @@ impl<T> ExecutedGraph<T> {
 
         Ok(())
     }
-}
-
-/// Optimize the whole graph so that we remove redondant relations between nodes.
-/// based on the work https://gist.github.com/matejker/6d9305e23a168ed66d3260eb261bb98b
-#[allow(unused)]
-#[deprecated]
-fn optimize_dependency_graph(dependency_graph: &DependencyGraph) -> DependencyGraph {
-    let mut dependencies_to_remove = dependency_graph
-        .keys()
-        .map(|target| (target, Vec::<&String>::new()))
-        .collect::<BTreeMap<_, _>>();
-
-    for (target, node) in dependency_graph {
-        let combinations = node
-            .dependencies
-            .keys()
-            .flat_map(|dependency| {
-                node.dependencies
-                    .keys()
-                    .map(move |other_dependency| (dependency, other_dependency))
-            })
-            .filter(|(dependency, other_dependency)| dependency != other_dependency);
-
-        for (dependency, other_dependency) in combinations {
-            if dependency_graph[other_dependency]
-                .dependencies
-                .contains_key(dependency)
-            {
-                dependencies_to_remove
-                    .get_mut(target)
-                    .unwrap()
-                    .push(dependency);
-            }
-        }
-    }
-
-    let mut optimized_graph = dependency_graph.clone();
-
-    for (target, duplicates) in dependencies_to_remove {
-        optimized_graph
-            .get_mut(target)
-            .unwrap()
-            .dependencies
-            .retain(|dependency, _| !duplicates.contains(&dependency));
-    }
-
-    optimized_graph
 }
 
 fn arc_error<T>(_: Arc<T>) -> Error {

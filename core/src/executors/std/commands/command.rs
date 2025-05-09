@@ -149,7 +149,8 @@ impl Command {
             }
             (None, Argv::Line(line)) => {
                 let mut split = line.split_whitespace();
-                let program = PathBuf::from(split.next().ok_or_else(|| anyhow!("command is empty"))?);
+                let program =
+                    PathBuf::from(split.next().ok_or_else(|| anyhow!("command is empty"))?);
                 (program, split.map(str::to_owned).collect())
             }
         };

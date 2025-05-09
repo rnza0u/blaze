@@ -84,8 +84,8 @@ pub struct DescribeCommand {
 }
 
 impl BlazeSubCommandExecution for DescribeCommand {
-    fn execute(&self, root: &Path, global_options: GlobalOptions) -> Result<()> {
-        match &self.subcommand {
+    fn execute(self: Box<Self>, root: &Path, global_options: GlobalOptions) -> Result<()> {
+        match self.subcommand {
             DescribeSubCommand::Project {
                 project,
                 targets,
@@ -93,7 +93,7 @@ impl BlazeSubCommandExecution for DescribeCommand {
             } => {
                 let mut options = DescribeProjectOptions::new(project);
 
-                if *summary {
+                if summary {
                     options = options.as_summary();
                 }
 
@@ -106,7 +106,7 @@ impl BlazeSubCommandExecution for DescribeCommand {
             DescribeSubCommand::Workspace { summary, selection } => {
                 let mut options = DescribeWorkspaceOptions::new();
 
-                if *summary {
+                if summary {
                     options = options.as_summary();
                 }
 

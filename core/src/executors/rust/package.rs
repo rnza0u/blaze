@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, bail, Context};
 use blaze_common::{error::Result, value::Value};
@@ -20,8 +20,9 @@ pub fn is_rust_executor(root: &Path) -> Result<bool> {
 }
 
 pub struct RustExecutorPackage {
-    pub name: String,
-    pub exported_fn: String,
+    root: PathBuf,
+    name: String,
+    exported_fn: String,
 }
 
 impl RustExecutorPackage {
@@ -87,8 +88,27 @@ impl RustExecutorPackage {
         }
 
         Ok(Self {
+            root: root.to_owned(),
             name: name.to_owned(),
             exported_fn: exported.to_owned(),
         })
+    }
+
+    pub fn exported_fn(&self) -> &str {
+        &self.exported_fn
+    }
+
+    #[cfg(not(windows))]
+    pub fn library_path(&self) -> PathBuf {
+        let formatted_name = self.name.replace('-', "_");
+        self.root
+            .join(format!("target/release/lib{formatted_name}.so"))
+    }
+
+    #[cfg(windows)]
+    pub fn library_path(&self) -> PathBuf {
+        let formatted_name = self.name.replace('-', "_");
+        self.root
+            .join(format!("target\\release\\{formatted_name}.dll"))
     }
 }

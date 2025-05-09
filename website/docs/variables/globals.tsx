@@ -1,4 +1,6 @@
-export default [
+import React from 'react'
+
+export const globalVariables = [
     {
         path: 'root',
         description: 'The workspace root directory, as an absolute path.',
@@ -42,4 +44,4 @@ export default [
         description: 'Filesystem path component separator for the current platform',
         example: '/'
     }
-]
+] as const

@@ -1,3 +1,6 @@
+use anyhow::{anyhow, Context};
+use blaze_common::error::Result;
+use shared_child::SharedChild;
 use std::{
     collections::HashMap,
     fmt::Display,
@@ -7,11 +10,6 @@ use std::{
     sync::{RwLock, RwLockWriteGuard},
     thread::JoinHandle,
 };
-
-use anyhow::{anyhow, Context};
-
-use blaze_common::error::Result;
-use shared_child::SharedChild;
 
 use super::thread::{join, thread};
 
@@ -127,7 +125,6 @@ impl Process {
                     process
                         .child
                         .take_stdout()
-                        .take()
                         .ok_or_else(|| anyhow!("could not take stdout for {process}."))?,
                     std::io::stdout(),
                 ),
@@ -135,7 +132,6 @@ impl Process {
                     process
                         .child
                         .take_stderr()
-                        .take()
                         .ok_or_else(|| anyhow!("could not take stderr for {process}."))?,
                     std::io::stderr(),
                 ),
@@ -162,7 +158,6 @@ impl Process {
     }
 
     /// Wait indefinitely for process termination.
-    /// This does not take ownership or a mutable reference.
     pub fn wait(&self) -> Result<ProcessStatus> {
         let status = self
             .child

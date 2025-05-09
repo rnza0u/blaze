@@ -57,13 +57,13 @@ pub struct InitCommand {
 }
 
 impl BlazeSubCommandExecution for InitCommand {
-    fn execute(&self, root: &Path, globals: GlobalOptions) -> Result<()> {
+    fn execute(self: Box<Self>, root: &Path, globals: GlobalOptions) -> Result<()> {
         init(
             root,
             InitOptions {
                 create_directory: self.create_directory,
                 format: self.format,
-                name: self.name.clone(),
+                name: self.name,
                 no_git: self.no_git_init,
             },
             globals,

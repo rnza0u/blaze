@@ -32,7 +32,7 @@ impl<'de> Deserialize<'de> for Parallelism {
     {
         struct ParallelismVisitor;
 
-        impl<'de> Visitor<'de> for ParallelismVisitor {
+        impl Visitor<'_> for ParallelismVisitor {
             type Value = Parallelism;
 
             fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {

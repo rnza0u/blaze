@@ -48,18 +48,18 @@ impl SpawnResults {
 }
 
 #[derive(Debug)]
-pub struct SpawnOptions {
-    command: String,
+pub struct SpawnOptions<'a> {
+    command: &'a str,
     shell: Option<Shell>,
     selector_source: Option<SelectorSource>,
     parallelism: Option<Parallelism>,
     quiet: bool,
 }
 
-impl SpawnOptions {
-    pub fn new(command: &str) -> Self {
+impl<'a> SpawnOptions<'a> {
+    pub fn new(command: &'a str) -> Self {
         Self {
-            command: command.to_owned(),
+            command,
             shell: None,
             selector_source: None,
             parallelism: None,
@@ -146,7 +146,7 @@ pub fn spawn(
                 .deserialization_context()
                 .template_data
                 .with_project(name.as_str(), &workspace.root().join(reference.path()))?;
-            let interpolated_command = template_data.render_str(&options.command)?;
+            let interpolated_command = template_data.render_str(options.command)?;
             Ok((
                 name.as_str(),
                 shell_formatter.format_command(&interpolated_command)?,

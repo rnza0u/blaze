@@ -1,5 +1,6 @@
 import Layout from '@theme/Layout'
 import styles from './about.module.css'
+import React from 'react'
 
 export default function About(){
     return <Layout

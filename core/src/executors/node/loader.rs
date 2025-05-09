@@ -14,10 +14,9 @@ use crate::executors::{
 
 use super::{executor::NodeExecutor, package::NodeExecutorPackage};
 
-/// This loader will manually install and build the executor before loading.
-pub struct LocalNodeExecutorLoader;
+pub struct NodeExecutorLoader;
 
-impl ExecutorLoader for LocalNodeExecutorLoader {
+impl ExecutorLoader for NodeExecutorLoader {
     fn load_from_src(&self, root: &Path) -> Result<ExecutorWithMetadata> {
         let package = NodeExecutorPackage::from_root(root).with_context(|| {
             format!(
@@ -25,10 +24,6 @@ impl ExecutorLoader for LocalNodeExecutorLoader {
                 root.display()
             )
         })?;
-
-        package
-            .build()
-            .with_context(|| format!("failed to build node executor at {}", root.display()))?;
 
         let executor = Box::new(NodeExecutor::new(package));
 

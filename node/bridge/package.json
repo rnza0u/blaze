@@ -19,8 +19,8 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@types/node": "^20.8.3",
-    "esbuild": "0.23.1",
+    "@types/node": "^22.15.7",
+    "esbuild": "0.25.3",
     "eslint": "^9.9.0",
     "eslint-config-rnz-main": "^1.0.5",
     "eslint-config-rnz-node": "^1.0.5",

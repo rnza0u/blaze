@@ -19,11 +19,11 @@ name = "blaze_cli"
 [dependencies]
 # external dependencies
 clap = { version = "4", features = ["derive", "cargo"] }
-colored = "2"
+colored = "3"
 anyhow = "1.0"
 possibly = { version = "1.0" }
-strum = "0.26"
-strum_macros = "0.26"
+strum = "0.27.1"
+strum_macros = "0.27.1"
 build-time = "0.1"
 # internal dependencies
 blaze-common = { version = "0.2.16", path = "../common" }

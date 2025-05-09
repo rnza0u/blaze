@@ -1,3 +1,5 @@
+local blaze = std.extVar('blaze');
+
 {
     vars: {
         lint: {
@@ -7,7 +9,8 @@
             version: '0.2.16'
         },
         runArgs: ['version'], 
-        tests: null
+        tests: null,
+        ci: std.objectHas(blaze.environment, 'CI') && blaze.environment.CI == "true"
     },
     include: [
         { 

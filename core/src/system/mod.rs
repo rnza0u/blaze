@@ -1,9 +1,11 @@
+pub mod cargo;
 pub mod env;
 pub mod file_changes;
 pub mod glob;
 pub mod hash;
 pub mod ipc_server;
 pub mod locks;
+pub mod npm;
 pub mod parallel_executor;
 pub mod process;
 pub mod random;
