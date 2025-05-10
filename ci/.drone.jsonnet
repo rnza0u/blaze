@@ -3,7 +3,7 @@ local cacheEnv = {
     CACHE_KEY: 'blaze-ci-${DRONE_BRANCH}',
     CACHE_EXTRA_DIRS: std.join(',', [
         "/root/.cargo",
-        "/root/.npm",
+        "/root/.pnpm-store",
         "/root/.rustup",
         ".blaze/cache",
         ".blaze/repositories",
