@@ -1,0 +1,14 @@
+packages:
+  - node/bridge
+  - node/devkit
+  - schemas
+  - website
+catalog:
+  '@types/node': "^22.15.7"
+  esbuild: "0.25.3"
+  eslint: "^9.9.0"
+  typescript: ^5.5.2
+  eslint-config-rnz-main: ^1.0.5
+  eslint-config-rnz-node: ^1.0.5
+  eslint-config-rnz-web: ^1.0.5
+  zod: ^3.22.4

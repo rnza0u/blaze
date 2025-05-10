@@ -6,7 +6,7 @@ local blaze = std.extVar('blaze');
             fix: false
         },
         publish: {
-            version: '0.2.16'
+            version: '0.3.0'
         },
         runArgs: ['version'], 
         tests: null,

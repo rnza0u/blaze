@@ -24,8 +24,7 @@ local cargoArgs = (if blaze.vars.ci then ['--locked'] else []);
                 invalidateWhen: {
                     inputChanges: [
                         'src/**',
-                        'Cargo.toml',
-                        'Cargo.lock'
+                        'Cargo.toml'
                     ]
                 }
             },

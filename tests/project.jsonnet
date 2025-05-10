@@ -71,8 +71,7 @@ local testTargets = {
                                 'tests/fixtures/executors/rust-checker/target',
                             ]
                         }, 
-                        'Cargo.toml', 
-                        'Cargo.lock'
+                        'Cargo.toml'
                     ]
                 }
             },

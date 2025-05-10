@@ -3,31 +3,16 @@ local blaze = std.extVar('blaze');
 
 {
     targets: {
-        install: {
-            executor: 'std:commands',
-            options: {
-                commands: [
-                    {
-                        program: 'npm',
-                        arguments: [if blaze.vars.ci then 'ci' else 'install']
-                    }
-                ]
-            },
-            cache: {
-                invalidateWhen: {
-                    filesMissing: ['node_modules'],
-                    inputChanges: ['package.json'],
-                    outputChanges: ['package-lock.json']
-                }
-            }
-        },
         source: {
             cache: {
                 invalidateWhen: {
-                    inputChanges: ['src/**', 'tsconfig.json']
+                    inputChanges: [
+                        'src/**', 
+                        'tsconfig.json'
+                    ]
                 }
             },
-            dependencies: ['install']
+            dependencies: ['pnpm:install']
         },
         lint: {
             executor: 'std:commands',
@@ -48,10 +33,7 @@ local blaze = std.extVar('blaze');
             executor: 'std:commands',
             options: {
                 commands: [
-                    {
-                        program: 'npm',
-                        arguments: ['run', 'build']
-                    }
+                    './node_modules/.bin/tsc'
                 ]
             },
             cache: {
@@ -67,7 +49,7 @@ local blaze = std.extVar('blaze');
             executor: {
                 url: 'https://github.com/rnza0u/blaze-executors.git',
                 format: 'Git',
-                path: 'npm-publish',
+                path: 'pnpm-publish',
                 pull: true
             },
             options: {
@@ -81,11 +63,7 @@ local blaze = std.extVar('blaze');
                 commands: [
                     {
                         program: 'rm',
-                        arguments: ['-rf', 'node_modules', 'lib']
-                    },
-                    {
-                        program: 'npm',
-                        arguments: ['uninstall', '--global', '@blaze-repo/node-devkit']
+                        arguments: ['-rf', 'lib']
                     }
                 ]
             }

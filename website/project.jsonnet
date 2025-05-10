@@ -8,24 +8,6 @@ local blaze = std.extVar('blaze');
 
 {
     targets: {
-        install: {
-            executor: 'std:commands',
-            cache: {
-                invalidateWhen: {
-                    inputChanges: ['package.json'],
-                    outputChanges: ['package-lock.json'],
-                    filesMissing: ['node_modules']
-                }
-            },
-            options: {
-                commands: [
-                    {
-                        program: 'npm',
-                        arguments: [if blaze.vars.ci then 'ci' else 'install']
-                    }
-                ]
-            }
-        },
         source: {
             cache: {
                 invalidateWhen: {
@@ -39,7 +21,7 @@ local blaze = std.extVar('blaze');
                 }
             },
             dependencies: [
-                'install',
+                'pnpm:install',
                 'move-json-schemas',
                 'move-cli-docs'
             ]
@@ -171,8 +153,7 @@ local blaze = std.extVar('blaze');
                             'build',
                             '.docusaurus',
                             'docs/cli',
-                            'static/schemas',
-                            'node_modules'
+                            'static/schemas'
                         ]
                     }
                 ]

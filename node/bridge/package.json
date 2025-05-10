@@ -5,25 +5,22 @@
     "url": "git+https://github.com/rnza0u/blaze.git",
     "directory": "node/bridge"
   },
-  "version": "0.2.16",
+  "version": "0.3.0",
   "description": "A bridge between Blaze and Node.js executors.",
   "main": "dist/main.js",
   "type": "module",
-  "scripts": {
-    "build": "tsc && esbuild dist/main.js --bundle --outfile=dist/main.js --platform=node --minify --allow-overwrite=true --format=esm"
-  },
   "author": "Renaud N'zaou",
   "license": "MIT",
   "dependencies": {
-    "@blaze-repo/node-devkit": "^0.2.16",
-    "zod": "^3.22.4"
+    "@blaze-repo/node-devkit": "workspace:*",
+    "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "^22.15.7",
-    "esbuild": "0.25.3",
-    "eslint": "^9.9.0",
-    "eslint-config-rnz-main": "^1.0.5",
-    "eslint-config-rnz-node": "^1.0.5",
-    "typescript": "^5.5.2"
+    "@types/node": "catalog:",
+    "esbuild": "catalog:",
+    "eslint": "catalog:",
+    "eslint-config-rnz-main": "catalog:",
+    "eslint-config-rnz-node": "catalog:",
+    "typescript": "catalog:"
   }
 }

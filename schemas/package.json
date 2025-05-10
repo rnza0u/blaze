@@ -1,7 +1,7 @@
 {
   "name": "@blaze-repo/json-schemas",
   "homepage": "https://blaze-monorepo.dev",
-  "version": "0.2.16",
+  "version": "0.3.0",
   "repository": {
     "url": "git+https://github.com/rnza0u/blaze.git",
     "directory": "schemas"
@@ -24,11 +24,11 @@
   "license": "ISC",
   "devDependencies": {
     "@types/json-schema": "^7.0.15",
-    "@types/node": "^22.13.5",
-    "eslint": "^9.9.1",
-    "eslint-config-rnz-main": "^1.0.5",
-    "eslint-config-rnz-node": "^1.0.5",
-    "typescript": "^5.8.2"
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "eslint-config-rnz-main": "catalog:",
+    "eslint-config-rnz-node": "catalog:",
+    "typescript": "catalog:"
   },
   "dependencies": {
     "@hyperjump/json-schema": "^1.9.8"

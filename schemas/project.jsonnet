@@ -2,24 +2,6 @@ local blaze = std.extVar('blaze');
 
 {
     targets: {
-        install: {
-            executor: 'std:commands',
-            options: {
-                commands: [
-                    {
-                        program: 'npm',
-                        arguments: [if blaze.vars.ci then 'ci' else 'install']
-                    }
-                ]
-            },
-            cache: {
-                invalidateWhen: {
-                    inputChanges: ['package.json'],
-                    outputChanges: ['package-lock.json'],
-                    filesMissing: ['node_modules']
-                }
-            }
-        },
         source: {
             cache: {
                 invalidateWhen: {
@@ -29,7 +11,7 @@ local blaze = std.extVar('blaze');
                     ]
                 }
             },
-            dependencies: ['install']
+            dependencies: ['pnpm:install']
         },
         lint: {
             executor: 'std:commands',
@@ -94,7 +76,7 @@ local blaze = std.extVar('blaze');
         publish: {
             executor: {
                 url: 'https://github.com/rnza0u/blaze-executors.git',
-                path: 'npm-publish',
+                path: 'pnpm-publish',
                 format: 'Git',
                 pull: true
             },
@@ -112,8 +94,7 @@ local blaze = std.extVar('blaze');
                         arguments: [
                             '-rf', 
                             'schemas', 
-                            'dist', 
-                            'node_modules'
+                            'dist'
                         ]
                     }
                 ]

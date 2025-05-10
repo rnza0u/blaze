@@ -1,6 +1,6 @@
 {
   "name": "@blaze-repo/node-devkit",
-  "version": "0.2.16",
+  "version": "0.3.0",
   "homepage": "https://blaze-monorepo.dev",
   "repository": {
     "url": "git+https://github.com/rnza0u/blaze.git",
@@ -9,18 +9,15 @@
   "description": "Node devkit for the Blaze build system.",
   "type": "module",
   "main": "lib/index.js",
-  "scripts": {
-    "build": "tsc"
-  },
   "author": "rnza0u",
   "license": "MIT",
   "devDependencies": {
-    "eslint": "^9.9.0",
-    "eslint-config-rnz-main": "^1.0.5",
-    "eslint-config-rnz-node": "^1.0.5",
-    "typescript": "^5.5.2"
+    "eslint": "catalog:",
+    "eslint-config-rnz-main": "catalog:",
+    "eslint-config-rnz-node": "catalog:",
+    "typescript": "catalog:"
   },
   "dependencies": {
-    "zod": "^3.22.4"
+    "zod": "catalog:"
   }
 }

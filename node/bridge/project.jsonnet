@@ -2,29 +2,6 @@ local blaze = std.extVar('blaze');
 
 {
     targets: {
-        install: {
-            executor: 'std:commands',
-            options: {
-                commands: [
-                    {
-                        program: 'npm',
-                        arguments: [if blaze.vars.ci then 'ci' else 'install']
-                    },
-                    {
-                        program: 'npm',
-                        arguments: ['link', blaze.root + '/' + blaze.workspace.projects['node-devkit'].path]
-                    }
-                ]
-            },
-            cache: {
-                invalidateWhen: {
-                    inputChanges: ['package.json'],
-                    outputChanges: ['package-lock.json'],
-                    filesMissing: ['node_modules']
-                }
-            },
-            dependencies: ['node-devkit:build']
-        },
         source: {
             cache: {
                 invalidateWhen: {
@@ -34,7 +11,7 @@ local blaze = std.extVar('blaze');
                     ]
                 }
             },
-            dependencies: ['install']
+            dependencies: ['pnpm:install', 'node-devkit:build']
         },
         lint: {
             executor: 'std:commands',
@@ -55,10 +32,8 @@ local blaze = std.extVar('blaze');
             executor: 'std:commands',
             options: {
                 commands: [
-                    {
-                        program: 'npm',
-                        arguments: ['run', 'build']
-                    }
+                    './node_modules/.bin/tsc',
+                    './node_modules/.bin/esbuild dist/main.js --bundle --outfile=dist/main.js --platform=node --minify --allow-overwrite=true --format=esm'
                 ]
             },
             cache: {
@@ -74,7 +49,7 @@ local blaze = std.extVar('blaze');
                 commands: [
                     {
                         program: 'rm',
-                        arguments: ['-rf', 'dist', 'node_modules']
+                        arguments: ['-rf', 'dist']
                     }
                 ]
             }
@@ -83,14 +58,11 @@ local blaze = std.extVar('blaze');
             executor: {
                 url: 'https://github.com/rnza0u/blaze-executors.git',
                 format: 'Git',
-                path: 'npm-publish',
+                path: 'pnpm-publish',
                 pull: true
             },
             options: {
-                releaseVersion: blaze.vars.publish.version,
-                linkedDependencies: {
-                    runtime: ['@blaze-repo/node-devkit']
-                }
+                releaseVersion: blaze.vars.publish.version
             },
             dependencies: [
                 'build',

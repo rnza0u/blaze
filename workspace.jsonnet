@@ -5,7 +5,7 @@
       path: 'ci',
       description: 'CI/CD related files',
     },
-    'cli': {
+    cli: {
       path: 'cli',
       description: 'Blaze command line interface crate.',
       tags: ['rust']
@@ -15,17 +15,17 @@
       description: 'Auto generated documentation for Blaze CLI (man files and mdx files for the website)',
       tags: ['rust', 'docs']
     },
-    'core': {
+    core: {
       path: 'core',
       description: 'Blaze main library crate.',
       tags: ['rust']
     },
-    'tests': {
+    tests: {
       path: 'tests',
       description: 'Blaze integration tests suite.',
       tags: ['rust']
     },
-    'common': {
+    common: {
       path: 'common',
       description: 'Blaze shared data structures.',
       tags: ['rust']
@@ -33,12 +33,12 @@
     'node-bridge': {
       path: 'node/bridge',
       description: 'Blaze Node.js executors bridge script.',
-      tags: ['node']
+      tags: ['node', 'pnpm']
     },
     'node-devkit': {
       path: 'node/devkit',
       description: 'Blaze Node.js executors devkit (library).',
-      tags: ['node']
+      tags: ['node', 'pnpm']
     },
     'rust-bridge': {
       path: 'rust/bridge',
@@ -50,25 +50,29 @@
       description: 'Blaze Rust executors devkit (library).',
       tags: ['rust']
     },
-    'website': {
+    website: {
       path: 'website',
       description: 'Blaze main documentation website.',
-      tags: ['node', 'web']
+      tags: ['node', 'web', 'pnpm']
     },
-    'assets': {
+    assets: {
       path: 'assets',
       description: 'Blaze brand assets.',
       tags: []
     },
-    'schemas': {
+    schemas: {
       path: 'schemas',
       description: 'Blaze JSON schemas.',
-      tags: ['node', 'docs']
+      tags: ['node', 'docs', 'pnpm']
     },
-    'downloads': {
+    downloads: {
       path: 'downloads',
       description: 'Blaze downloads REST API',
       tags: ['rust', 'web']
+    },
+    pnpm: {
+      path: 'pnpm',
+      description: 'PNPM workspace targets'
     }
   },
   settings: {

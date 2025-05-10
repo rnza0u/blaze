@@ -60,8 +60,7 @@ local cargoArgs = (if blaze.vars.ci then ['--locked'] else []);
           inputChanges: [
             'src/**',
             'build.rs',
-            'Cargo.toml',
-            'Cargo.lock'
+            'Cargo.toml'
           ]
         }
       },
